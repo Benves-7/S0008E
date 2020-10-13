@@ -5,6 +5,9 @@
 
 # Custom ignores
 [Bb]uild/
+projects/Skeleton/code/tinyxml/
+projects/Skeleton/cmake-build-debug/
+
 
 
 # User-specific files
