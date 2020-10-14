@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include "MathLib.h"
 #include <GL/glew.h>
 #include <iostream>
 #include <fstream>
@@ -111,13 +110,14 @@ public:
 	}
 	void modifyUniformMatrix(std::string name, float* mat)
 	{
+		cout << this->program << endl;
 		unsigned int uniform = glGetUniformLocation(this->program, name.c_str());
 		glUniformMatrix4fv(uniform, 1, GL_TRUE, mat);
 	}
 	void modifyUniformVector(std::string name, Vector4D vec)
 	{
 		unsigned int uniform = glGetUniformLocation(this->program, name.c_str());
-		glUniform4fv(uniform, 1, vec.GetPointer());
+		glUniform4fv(uniform, 1, vec.getPointer());
 	}
 	void modifyUniformFloat(std::string name, float value)
 	{

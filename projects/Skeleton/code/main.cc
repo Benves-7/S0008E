@@ -4,7 +4,6 @@
 //------------------------------------------------------------------------------
 #include "config.h"
 #include "exampleapp.h"
-#include "MathLib.h"
 int
 main(int argc, const char** argv)
 {

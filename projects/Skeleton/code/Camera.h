@@ -2,7 +2,7 @@
 #include "config.h"
 #include "exampleapp.h"
 #include <cstring>
-#include "MathLib.h"
+#include "Matrix4D.h"
 
 class Camera
 {
@@ -16,8 +16,8 @@ public:
 	/// moves the camera.
 	inline void moveCameraF() { cameraPos += (cameraFront * cameraSpeed); }
 	inline void moveCameraB() { cameraPos -= (cameraFront * cameraSpeed); }
-	inline void moveCameraL() { cameraPos -= Vector4D::cross(cameraFront, cameraUp).Normalize() * cameraSpeed; }
-	inline void moveCameraR() { cameraPos += Vector4D::cross(cameraFront, cameraUp).Normalize() * cameraSpeed; }
+	inline void moveCameraL() { cameraPos -= Vector4D::normalize(Vector4D::cross(cameraFront, cameraUp)) * cameraSpeed; }
+	inline void moveCameraR() { cameraPos += Vector4D::normalize(Vector4D::cross(cameraFront, cameraUp)) * cameraSpeed; }
 	inline void moveCameraU() { cameraPos += (cameraUp * cameraSpeed); }
 	inline void moveCameraD() { cameraPos -= (cameraUp * cameraSpeed); }
 	/// changes the camera front to rotate the camera.
@@ -27,7 +27,7 @@ public:
 	}
 	inline void printCameraPos()
 	{
-		cameraPos.Print();
+		cameraPos.print();
 	}
 	inline Vector4D getCameraPos()
 	{
@@ -35,7 +35,7 @@ public:
 	}
 	inline void getCamera()
 	{
-		printf("Camera pos = %f:%f:%f \nCamera dir = %f:%f:%f\n", cameraPos.GetX(), cameraPos.GetY(), cameraPos.GetZ(), cameraFront.GetX(), cameraFront.GetY(), cameraFront.GetZ());
+		printf("Camera pos = %f:%f:%f \nCamera dir = %f:%f:%f\n", cameraPos.getX(), cameraPos.getY(), cameraPos.getZ(), cameraFront.getX(), cameraFront.getY(), cameraFront.getZ());
 	}
 
 private:
@@ -77,7 +77,7 @@ inline void Camera::setup()
 		((r + l) / (r - l)), ((t + b) / (t - b)), -((f + n) / (f - n)), -1,
 		0, 0, -((2 * f*n) / (f - n)), 0
 	);
-	perspectiveProjection.TransposeThis();
+	perspectiveProjection = Matrix4D::transpose(perspectiveProjection);
 	
 	//Camera setup
 	cameraPos = Vector4D(0.0, 0.0, 5.0, 1.0);
@@ -92,7 +92,7 @@ inline void Camera::setup()
 inline Matrix4D Camera::run()
 {
 	cameraTarget = (cameraPos + cameraFront);
-	cameraDirection = (cameraPos - cameraTarget).Normalize();
+	cameraDirection = Vector4D::normalize(cameraPos - cameraTarget);
 	cameraRight = Vector4D::cross(up, cameraDirection);
 	cameraUp = Vector4D::cross(cameraDirection, cameraRight);
 

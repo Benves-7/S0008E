@@ -24,8 +24,8 @@ namespace Example
 	Vector4D cameraUp = Vector4D(0.0f, 1.0f, 0.0f, 1);
 
 	Vector4D position = Vector4D(0.0f, 0.0f, -1.0f, 1.0f);
-	Matrix4D rotX = Matrix4D::RotX(0);
-	Matrix4D rotY = Matrix4D::RotY(0);
+	Matrix4D rotX = Matrix4D::rotX(0);
+	Matrix4D rotY = Matrix4D::rotY(0);
 
 	bool click = false;
 	bool isHeldDown = false;
@@ -100,7 +100,8 @@ namespace Example
 					front[1] = sin(pitch * radianConversion);
 					front[2] = sin(yaw * radianConversion) * cos(pitch * radianConversion);
 					front[3] = 1;
-					cameraFront = front.Normalize();
+					front.normalize();
+					cameraFront = front;
 				}
 			});
 		window->SetKeyPressFunction([this](int32 key, int32 i, int32 action, int32 modifier)
@@ -116,15 +117,21 @@ namespace Example
 				}
 				if (key == GLFW_KEY_D)
 				{
-					cameraPos = cameraPos + (Vector4D::cross(cameraFront, cameraUp).Normalize() * speed);
+					cameraPos = cameraPos + (Vector4D::normalize(Vector4D::cross(cameraFront, cameraUp)) * speed);
 				}
 				if (key == GLFW_KEY_A)
 				{
-					cameraPos = cameraPos - (Vector4D::cross(cameraFront, cameraUp).Normalize() * speed);
+					cameraPos = cameraPos - (Vector4D::normalize(Vector4D::cross(cameraFront, cameraUp)) * speed);
 				}
 
 				if (key == GLFW_KEY_ESCAPE)
 					this->window->Close();
+
+				if (key == GLFW_KEY_T && action == GLFW_PRESS)
+					soldier.ds();
+
+				if (key == GLFW_KEY_Y && action == GLFW_PRESS)
+					soldier.db();
 			});
 
 		if (this->window->Open())
@@ -134,9 +141,15 @@ namespace Example
 
 			this->window->GetSize(windowSizeX, windowSizeY);
 
-			perspectiveProjection = Matrix4D::PerspectiveProjection(nvgDegToRad(fov), (float)windowSizeX / (float)windowSizeY, 1000, 0.1);
+			perspectiveProjection = Matrix4D::perspective(nvgDegToRad(fov), (float)windowSizeX / (float)windowSizeY, 1000, 0.1);
+			shared_ptr<MeshResource> mesh = make_shared<MeshResource>();
+			std::shared_ptr<TextureResource> tex = std::make_shared<TextureResource>();
+			std::shared_ptr<Shader> shader = std::make_shared<Shader>();
+
+			mesh->setup("sphere.obj");
 
 			soldier.load();
+			soldier.setup(mesh, shader, tex);
 			
 			return true;
 		}
@@ -151,15 +164,18 @@ namespace Example
 	void
 		ExampleApp::Run()
 	{
+		std::chrono::high_resolution_clock clock = std::chrono::high_resolution_clock();
+		auto start = clock.now();
+
 		while (this->window->IsOpen() && true)
 		{
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			this->window->Update();
 			Matrix4D view = Matrix4D::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
-			soldier.update();
+			soldier.update(clock, start);
 
-			soldier.draw(Matrix4D::Transpose(view), perspectiveProjection);
+			soldier.draw(Matrix4D::transpose(view), perspectiveProjection);
 
 			this->window->SwapBuffers();
 		}

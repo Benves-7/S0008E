@@ -10,7 +10,7 @@ class GraphicsNode
 {
 public:
 
-	GraphicsNode() { transform = Matrix4D::RotY(1); }
+	GraphicsNode() { transform = Matrix4D::rotY(1); }
 	~GraphicsNode()
 	{
 		this->shader = 0;
@@ -26,19 +26,33 @@ public:
 	MeshResource* getMeshResource() { return meshResource.get(); }
 	Matrix4D getTransform() { return transform; }
 	void setTransform(Matrix4D mat) { transform = mat; }
-	void load(string filename, string vertexShaderName, string fragmentShaderName, int texture)
+	unsigned int load(string filename, string vertexShaderName, string fragmentShaderName, int texture)
 	{
+		unsigned int texI;
+		if (texture >= 0)
+		{
+			texI = textureResource.get()->loadFromFile(filename.c_str());
+		}
 		shader.get()->loadVertexShader(vertexShaderName.c_str());
 		shader.get()->loadFragmentShader(fragmentShaderName.c_str());
 		shader.get()->linkShaders();
-		textureResource.get()->bind(texture);
+		if (texture >= 0)
+		{
+			textureResource.get()->bind(texture);
+		}
 		light = LightSource(Vector4D(5, 2, 0, 1), Vector4D(0.5f, 0.5f, 0.5f, 1), 1);
 		shader.get()->useProgram();
+		if (texture >= 0)
+		{
+			if (texI >= 0)
+				return texI;
+		}
+		return -1;
 	}
 	void draw()
 	{
 		rend.clearZbuffer();
-		shader.get()->modifyUniformMatrix("transform", transform.GetPointer());
+		shader.get()->modifyUniformMatrix("transform", transform.getPointer());
 
 		shader.get()->modifyUniformVector("lightPos", light.getPosition());
 		shader.get()->modifyUniformVector("lightColor", light.getColor());

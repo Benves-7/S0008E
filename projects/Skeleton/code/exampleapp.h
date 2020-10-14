@@ -13,7 +13,6 @@
 
 #include "GraphicsNode.h"
 
-#include "MathLib.h"
 #include "meshresource.h"
 #include "textureresource.h"
 #include "Shader.h"

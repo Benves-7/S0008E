@@ -1,6 +1,8 @@
 #pragma once
 #include "meshresource.h"
 #include "textureresource.h"
+#include "Matrix4D.h"
+
 struct Line
 {
 	Line(int* pixels, int size)
@@ -282,11 +284,11 @@ public:
 	void barycentric(Vector4D point, Vector4D vec1, Vector4D vec2, Vector4D vec3, float& p1, float& p2, float& p3)
 	{
 		Vector4D temp1 = vec2 - vec1, temp2 = vec3 - vec1, temp3 = point - vec1;
-		float daa = temp1 * temp1;
-		float dab = temp1 * temp2;
-		float dbb = temp2 * temp2;
-		float dca = temp3 * temp1;
-		float dcb = temp3 * temp2;
+		float daa = Vector4D::dot(temp1, temp1);
+		float dab = Vector4D::dot(temp1, temp2);
+		float dbb = Vector4D::dot(temp2, temp2);
+		float dca = Vector4D::dot(temp3, temp1);
+		float dcb = Vector4D::dot(temp3, temp2);
 		float denominator = (daa * dbb) - (dab * dab);
 		p2 = (dbb * dca - dab * dcb) / denominator;
 		p3 = (daa * dcb - dab * dca) / denominator;

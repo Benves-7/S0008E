@@ -1,5 +1,5 @@
 #pragma once
-#include "MathLib.h"
+#include "Vector4D.h"
 
 namespace CoreAnimation
 {
@@ -56,6 +56,31 @@ namespace CoreAnimation
 #pragma pack(pop)
 } // namespace CoreAnimation
 
+class Curve
+{
+public:
+    unsigned int firstKeyIndex;
+    bool isActive;
+    bool isStatic;
+    unsigned int curveType;
+    Vector4D staticKey;
+};
+
+class Clip
+{
+public:
+    unsigned short numCurves;
+    unsigned short startKeyIndex;
+    unsigned short numKeys;
+    unsigned short keyStride;
+    unsigned short keyDuration;
+    unsigned char preInfinityType;
+    unsigned char postInfinityType;
+    char* name;
+    Curve* curves;
+};
+typedef Vector4D* keys;
+
 class Animation
 {
 public:
@@ -63,9 +88,16 @@ public:
 	~Animation() { }
 	Vector4D getKey(unsigned int clipIndex, float i, unsigned int CurveIndex, unsigned int type)
 	{
+        int flooredI = (int)floor(i);
+        float rem = i - flooredI;
 
+        return Vector4D();
 	}
 	void loadAnimations(char* filename);
+
+    Clip* clips;
+    keys keyBuffer;
+
 private:
 
 };
