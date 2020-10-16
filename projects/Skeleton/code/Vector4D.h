@@ -106,7 +106,7 @@ public:
 	{
 		return ((first.cord[0] * second.cord[0]) + (first.cord[1] * second.cord[1]) + (first.cord[2] * second.cord[2]));
 	}
-	static Vector4D Lerp(Vector4D first, Vector4D second, float step)
+	static Vector4D vLerp(Vector4D first, Vector4D second, float step)
 	{
 		return Vector4D(
 			internalLerp(first[0], second[0], step),
@@ -114,6 +114,28 @@ public:
 			internalLerp(first[2], second[2], step),
 			internalLerp(first[3], second[3], step)
 		);
+	}
+	static Vector4D Slerp(Vector4D first, Vector4D second, float step)
+	{
+		double dot = Vector4D::dot(first, second);
+		if (dot < 0.0f)
+		{
+			second = second * -1;
+			dot = -dot;
+		}
+		const double dotThreshold = 0.9995;
+		if (dot > dotThreshold)
+		{
+			return vLerp(first, second, step);
+		}
+		double theta_0 = acos(dot);
+		double theta = theta_0*step;
+		double sin_theta = sin(theta);
+		double sin_theta_0 = sin(theta_0);
+
+		double s0 = cos(theta) - dot * sin_theta / sin_theta_0;
+		double s1 = sin_theta / sin_theta_0;
+		return (first * s0) + (second * s1);
 	}
 
 

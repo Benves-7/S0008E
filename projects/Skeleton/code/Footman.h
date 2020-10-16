@@ -17,25 +17,27 @@ public:
 	void load()
 	{
 		skeleton.loadSkeleton("Unit_Footman.constants");
+
+		animation.loadAnimations("Unit_Footman.nax3");
 	}
 	void update(std::chrono::high_resolution_clock clock, std::chrono::high_resolution_clock::time_point start)
 	{
-		//using ms = std::chrono::duration<float, std::milli>;
-		//float animationSpeed = std::chrono::duration_cast<ms>(clock.now() - start).count() / animation.clips[clipToPlay].keyDuration;
+		using ms = std::chrono::duration<float, std::milli>;
+		float animationSpeed = std::chrono::duration_cast<ms>(clock.now() - start).count() / animation.clips[clipToPlay].keyDuration;
 
-		//for (int k = 0; k < skeleton.joints.size(); ++k)
-		//{
-		//	//Load animation data for one key in a clip
-		//	Vector4D pos = animation.getKey(clipToPlay, animationSpeed, k * 4, 0);
-		//	Matrix4D po = Matrix4D::getPositionMatrix(pos);
-		//	Vector4D rot = animation.getKey(clipToPlay, animationSpeed, k * 4 + 1, 1);
-		//	Matrix4D ro = Matrix4D::getRotationFromQuaternian(rot);
-		//	Vector4D scale = animation.getKey(clipToPlay, animationSpeed, k * 4 + 2, 0);
-		//	Matrix4D sc = Matrix4D::getScaleMatrix(scale);
-		//	Vector4D vel = animation.getKey(clipToPlay, animationSpeed, k * 4 + 3, 0);
-		//	Matrix4D res = po * ro * sc;
-		//	skeleton.joints.at(k).localTransform = res;
-		//}
+		for (int k = 0; k < skeleton.joints.size(); ++k)
+		{
+			//Load animation data for one key in a clip
+			Vector4D pos = animation.getKey(clipToPlay, animationSpeed, k * 4, 0);
+			Matrix4D po = Matrix4D::getPositionMatrix(pos);
+			Vector4D rot = animation.getKey(clipToPlay, animationSpeed, k * 4 + 1, 1);
+			Matrix4D ro = Matrix4D::getRotationFromQuaternian(rot);
+			Vector4D scale = animation.getKey(clipToPlay, animationSpeed, k * 4 + 2, 0);
+			Matrix4D sc = Matrix4D::getScaleMatrix(scale);
+			Vector4D vel = animation.getKey(clipToPlay, animationSpeed, k * 4 + 3, 0);
+			Matrix4D res = po * ro * sc;
+			skeleton.joints.at(k).localTransform = res;
+		}
 		skeleton.update(0);
 	}
 	void draw(Matrix4D viewMatrix, Matrix4D perspectiveProjection)
@@ -93,22 +95,6 @@ public:
 			}
 			glEnd();
 		}
-	}
-
-	void setup(shared_ptr<MeshResource> mesh, shared_ptr<Shader> shader, shared_ptr<TextureResource> texture)
-	{
-		for (int i = 0; i < skeleton.joints.size(); i++)
-		{
-			skeleton.joints[i].node.setShaderObject(shader);
-			skeleton.joints[i].line.setShaderObject(shader);
-
-			skeleton.joints[i].node.setMeshResource(mesh);
-
-
-			skeleton.joints[i].node.setTextureResource(texture);
-			skeleton.joints[i].line.setTextureResource(texture);
-		}
-			skeleton.joints[0].node.load("texture.tga", "vs.shader", "fs.shader", -1);
 	}
 	void ds()
 	{
