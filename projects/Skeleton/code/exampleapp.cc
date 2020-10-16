@@ -142,14 +142,8 @@ namespace Example
 			this->window->GetSize(windowSizeX, windowSizeY);
 
 			perspectiveProjection = Matrix4D::perspective(nvgDegToRad(fov), (float)windowSizeX / (float)windowSizeY, 1000, 0.1);
-			shared_ptr<MeshResource> mesh = make_shared<MeshResource>();
-			std::shared_ptr<TextureResource> tex = std::make_shared<TextureResource>();
-			std::shared_ptr<Shader> shader = std::make_shared<Shader>();
-
-			mesh->setup("sphere.obj");
 
 			soldier.load();
-			soldier.setup(mesh, shader, tex);
 			
 			return true;
 		}

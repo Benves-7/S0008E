@@ -19,6 +19,7 @@ struct Joint
     vector<int> children;
     Matrix4D localTransform, worldspaceTransform;
     GraphicsNode node;
+    GraphicsNode line;
 };
 
 class Skeleton

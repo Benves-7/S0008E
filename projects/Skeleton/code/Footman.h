@@ -5,6 +5,10 @@
 #include <chrono>
 #include <GL/GLU.h>
 
+
+
+#define PI 3.14159265
+
 class Footman
 {
 public:
@@ -36,8 +40,6 @@ public:
 	}
 	void draw(Matrix4D viewMatrix, Matrix4D perspectiveProjection)
 	{
-		Vector4D scaleBalls(0.001, 0.001, 0.001, 1);
-
 		// draw skeleton lines using the old openGL pipeline
 		glUseProgram(0);
 		glMatrixMode(GL_MODELVIEW);
@@ -45,48 +47,68 @@ public:
 		glMatrixMode(GL_PROJECTION);
 		auto dood = (perspectiveProjection);
 		glLoadMatrixf((GLfloat*)&dood);
-		if (drawSkeleton)
+
+		for (int i = 0; i < skeleton.joints.size(); ++i)
 		{
+			Joint joint = skeleton.joints.at(i);
+			Vector4D a = joint.worldspaceTransform.getPositionVector();
 			glBegin(GL_LINES);
-			glColor3f(255, 0, 0);
-			for (int i = 0; i < skeleton.joints.size(); ++i) {
-				Joint joint = skeleton.joints.at(i);
+			if (drawSkeleton)
+			{
 				if (joint.parent != -1)
 				{
+					glColor3f(255, 0, 0);
 					Vector4D a = joint.worldspaceTransform.getPositionVector();
 					Vector4D b = skeleton.joints.at(joint.parent).worldspaceTransform.getPositionVector();
 					glVertex3f(a[0], a[1], a[2]);
 					glVertex3f(b[0], b[1], b[2]);
 				}
 			}
-			glEnd();
-		}
-		if (drawBalls)
-		{
-			for (int i = 0; i < skeleton.joints.size(); i++)
+			if (drawBalls)
 			{
-				Joint joint = skeleton.joints.at(i);
-				if (joint.parent != -1)
-				{
-					Vector4D a = joint.worldspaceTransform.getPositionVector();
-					glPushMatrix();
-					glTranslatef(a[0], a[1], a[2]);
-					Cubesphere sphere(0.03f, 4, false);
-					sphere.draw();
-					glPopMatrix();
+
+				glColor3f(0, 255, 0);
+				int Stacks = 20;
+				int Slices = 20;
+				float radius = 0.03f;
+				// Calc The Vertices
+				for (int i = 0; i <= Stacks; ++i) {
+
+					float V = i / (float)Stacks;
+					float phi = V * PI;
+
+					// Loop Through Slices
+					for (int j = 0; j <= Slices; ++j) {
+
+						float U = j / (float)Slices;
+						float theta = U * (PI * 2);
+
+						// Calc The Vertex Positions
+						float x = a[0] + (cosf(theta) * sinf(phi) * radius);
+						float y = a[1] + (cosf(phi) * radius);
+						float z = a[2] + (sinf(theta) * sinf(phi) * radius);
+						glVertex3f(x, y, z);
+					}
 				}
 			}
+			glEnd();
 		}
 	}
+
 	void setup(shared_ptr<MeshResource> mesh, shared_ptr<Shader> shader, shared_ptr<TextureResource> texture)
 	{
 		for (int i = 0; i < skeleton.joints.size(); i++)
 		{
 			skeleton.joints[i].node.setShaderObject(shader);
+			skeleton.joints[i].line.setShaderObject(shader);
+
 			skeleton.joints[i].node.setMeshResource(mesh);
+
+
 			skeleton.joints[i].node.setTextureResource(texture);
-			skeleton.joints[i].node.load("Footman_Diffuse.tga", "vs.shader", "fs.shader", -1);
+			skeleton.joints[i].line.setTextureResource(texture);
 		}
+			skeleton.joints[0].node.load("texture.tga", "vs.shader", "fs.shader", -1);
 	}
 	void ds()
 	{
