@@ -8,15 +8,9 @@
 //------------------------------------------------------------------------------
 #include "core/app.h"
 #include "render/window.h"
-
-#include "software renderer.h"
-
-#include "GraphicsNode.h"
-
-#include "meshresource.h"
-#include "textureresource.h"
-#include "Shader.h"
+#include "Camera.h"
 #include "Footman.h"
+#include <chrono>
 
 namespace Example
 {
@@ -36,12 +30,14 @@ namespace Example
 
 	private:
 
+		std::chrono::high_resolution_clock clock = std::chrono::high_resolution_clock();
+		using ms = std::chrono::duration<float, std::milli>;
+
 		Display::Window* window;
+
+		Camera camera;
 
 		Footman soldier;
 
-		GraphicsNode node;
-		
-		std::shared_ptr<Shader> shader = std::make_shared<Shader>();
 	};
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "Vector4D.h"
+#include <fstream>
 
 namespace CoreAnimation
 {
@@ -76,6 +77,7 @@ public:
     unsigned short keyDuration;
     unsigned char preInfinityType;
     unsigned char postInfinityType;
+    unsigned short numEvents;
     char* name;
     Curve* curves;
 };
@@ -91,50 +93,38 @@ public:
 	Vector4D getKey(unsigned int clipIndex, float i, unsigned int curveIndex, unsigned int type)
 	{
         int flooredI = (int)floor(i);
-        float rem = i - flooredI;
+        float diff = i - flooredI;
 
         Clip clip = clips[clipIndex];
-        auto c = clips->curves[curveIndex];
         unsigned int curve = clips->curves[curveIndex].firstKeyIndex;
 
-        if (type == 0)
-        {
-            auto temp = Vector4D::vLerp(keyBuffer[clips[clipIndex].curves[curveIndex].firstKeyIndex + (flooredI) % clips[clipIndex].numKeys * clips[clipIndex].keyStride],
-                keyBuffer[clips[clipIndex].curves[curveIndex].firstKeyIndex + (flooredI + 1) % clips[clipIndex].numKeys * clips[clipIndex].keyStride], rem);
-            return temp;
-        }
-        else if (type == 1)
-        {
-            auto temp = Vector4D::Slerp(
-                keyBuffer[clips[clipIndex].curves[curveIndex].firstKeyIndex + (flooredI + 0) % clips[clipIndex].numKeys * clips[clipIndex].keyStride],
-                keyBuffer[clips[clipIndex].curves[curveIndex].firstKeyIndex + (flooredI + 1) % clips[clipIndex].numKeys * clips[clipIndex].keyStride],
-                rem);
-            return temp;
-        }
-        auto temp = keyBuffer[clips[clipIndex].curves[curveIndex].firstKeyIndex + ((int)floor(i)) % clips[clipIndex].numKeys * clips[clipIndex].keyStride];
-        return temp;
+        if (type == 0) // lerp for vectors.
+            return Vector4D::Lerp( keyBuffer[curve + (flooredI + 0) % clip.numKeys * clip.keyStride], keyBuffer[curve + (flooredI + 1) % clip.numKeys * clip.keyStride], diff);
+        else if (type == 1) // slerp for quaternions.
+            return Vector4D::Slerp(keyBuffer[curve + (flooredI + 0) % clip.numKeys * clip.keyStride], keyBuffer[curve + (flooredI + 1) % clip.numKeys * clip.keyStride], diff);
+        return keyBuffer[curve + (flooredI + 0) % clip.numKeys * clip.keyStride];
 	}
 
 	void loadAnimations(char* filename)
     {
-        ifstream file;
-        file.open(filename, ifstream::in | ifstream::binary);
+        std::ifstream file;
+        file.open(filename, std::ifstream::in | std::ifstream::binary);
         file.seekg(0, file.end);
         unsigned int length = file.tellg();
         file.seekg(0, file.beg);
         char* ptr = new char[length];
         file.read(ptr, length);
 
+
+
         Nax3Header* h = (Nax3Header*)ptr;
         header = h;
-        ptr += sizeof(Nax3Header);
         keyBuffer = (Vector4D*)malloc(h->numKeys * sizeof(Vector4D));
+        ptr += sizeof(Nax3Header);
 
         clips = new Clip[h->numClips];
-        for (int i = 0; i < h->numClips; i++)
-        {
+        for (int i = 0; i < h->numClips; ++i) {
             Nax3Clip* naxClip = (Nax3Clip*)ptr;
-            ptr += sizeof(Nax3Clip);
             Clip cl;
             cl.numCurves = naxClip->numCurves;
             cl.startKeyIndex = naxClip->startKeyIndex;
@@ -144,13 +134,17 @@ public:
             cl.preInfinityType = naxClip->preInfinityType;
             cl.postInfinityType = naxClip->postInfinityType;
             cl.name = naxClip->name;
+            ptr += sizeof(Nax3Clip);
 
-            for (int j = 0; j < naxClip->numEvents; j++)
-            {
+
+            // move the pointer to skip the events since they are not used
+            for (int j = 0; j < naxClip->numEvents; ++j) {
                 ptr += sizeof(Nax3AnimEvent);
             }
 
-            unsigned  int curveIndex;
+
+            // Add the curves to the clips
+            unsigned int curveIndex;
             cl.curves = new Curve[cl.numCurves];
             for (curveIndex = 0; curveIndex < cl.numCurves; curveIndex++)
             {
@@ -163,9 +157,10 @@ public:
                 cu.curveType = naxCurve->curveType;
                 cu.staticKey = Vector4D(naxCurve->staticKeyX, naxCurve->staticKeyY, naxCurve->staticKeyZ, naxCurve->staticKeyW);
                 cl.curves[curveIndex] = cu;
+
             }
             clips[i] = cl;
-            
+            // load the blob of data that contains the keyframes
             memcpy(keyBuffer, ptr, h->numKeys * sizeof(Vector4D));
         }
     }

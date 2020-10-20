@@ -6,11 +6,13 @@
 #define SKELETON_H
 
 #include "tinyxml.h"
+#include <vector>
 
 #ifndef XMLCheckResult
 #define XMLCheckResult(a_eResult) if (a_eResult != XML_SUCCESS) { printf("Error: %i\n", a_eResult); }
 #endif
 
+using namespace std;
 
 struct Joint
 {
@@ -18,8 +20,6 @@ struct Joint
     int index, parent;
     vector<int> children;
     Matrix4D localTransform, worldspaceTransform;
-    GraphicsNode node;
-    GraphicsNode line;
 };
 
 class Skeleton
@@ -29,11 +29,11 @@ public:
     ~Skeleton() {}
     inline void worldSpaceConvertion()
     {
-        for (int i = 0; i < joints.size(); i++)
+        for (int i = 0; i < joints->size(); i++)
         {
-            if (joints.at(i).parent!=-1)
+            if (joints->at(i).parent!=-1)
             {
-                joints.at(i).worldspaceTransform = joints.at(joints.at(i).parent).worldspaceTransform * joints.at(i).localTransform;
+                joints->at(i).worldspaceTransform = joints->at(joints->at(i).parent).worldspaceTransform * joints->at(i).localTransform;
             }
         }
     }
@@ -56,7 +56,7 @@ public:
 
             if (joint.parent != -1)
             {
-                joints.at(joint.parent).children.push_back(joint.index);
+                joints->at(joint.parent).children.push_back(joint.index);
             }
 
             float temp[4];
@@ -70,29 +70,35 @@ public:
             Vector4D scale(temp);
             Matrix4D s = Matrix4D::getScaleMatrix(scale);
 
-            joint.localTransform = p*r*s;
+            joint.worldspaceTransform = p * r * s;
+            joint.localTransform = joint.worldspaceTransform;
 
-            joints.push_back(joint);
+            joints->push_back(joint);
             eJoint = eJoint->NextSiblingElement("Joint");
         }
         worldSpaceConvertion();
     }
     inline void update(int index)
     {
-        if (joints.at(index).parent == -1)
+        Joint& joint = joints->at(index);
+        //std::cout << "index: " << index << std::endl;
+        //joint.worldspaceTransform.printPosition();
+        if (joint.parent == -1)
         {
-            joints.at(index).worldspaceTransform = joints.at(index).localTransform;
+            joint.worldspaceTransform = joint.localTransform;
         }
         else
         {
-            joints.at(index).worldspaceTransform = joints.at(joints.at(index).parent).worldspaceTransform * joints.at(index).localTransform;
+            joint.worldspaceTransform = joints->at(joint.parent).worldspaceTransform * joint.localTransform;
         }
-        for (int i = 0; i < joints.at(index).children.size(); i++)
+        for (int i = 0; i < joint.children.size(); i++)
         {
-            update(joints.at(index).children.at(i));
+            update(joint.children.at(i));
         }
+        return;
     }
-    vector<Joint> joints;
+
+    vector<Joint>* joints = new vector<Joint>();
 };
 
 

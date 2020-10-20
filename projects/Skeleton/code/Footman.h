@@ -2,10 +2,7 @@
 #include "Skeleton.h"
 #include "Animation.h"
 #include "Cubesphere.h"
-#include <chrono>
 #include <GL/GLU.h>
-
-
 
 #define PI 3.14159265
 
@@ -14,45 +11,37 @@ class Footman
 public:
 	Footman() {};
 	~Footman() {};
+
 	void load()
 	{
 		skeleton.loadSkeleton("Unit_Footman.constants");
 
 		animation.loadAnimations("Unit_Footman.nax3");
 	}
-	void update(std::chrono::high_resolution_clock clock, std::chrono::high_resolution_clock::time_point start)
+	void update(float runtime)
 	{
-		using ms = std::chrono::duration<float, std::milli>;
-		float animationSpeed = std::chrono::duration_cast<ms>(clock.now() - start).count() / animation.clips[clipToPlay].keyDuration;
+		float animationSpeed = runtime / animation.clips[clipToPlay].keyDuration;
 
-		for (int k = 0; k < skeleton.joints.size(); ++k)
+		for (int i = 0; i < skeleton.joints->size(); ++i)
 		{
 			//Load animation data for one key in a clip
-			Vector4D pos = animation.getKey(clipToPlay, animationSpeed, k * 4, 0);
+			Vector4D pos = animation.getKey(clipToPlay, animationSpeed, i * 4, 0);
 			Matrix4D po = Matrix4D::getPositionMatrix(pos);
-			Vector4D rot = animation.getKey(clipToPlay, animationSpeed, k * 4 + 1, 1);
+			Vector4D rot = animation.getKey(clipToPlay, animationSpeed, i * 4 + 1, 1);
 			Matrix4D ro = Matrix4D::getRotationFromQuaternian(rot);
-			Vector4D scale = animation.getKey(clipToPlay, animationSpeed, k * 4 + 2, 0);
+			Vector4D scale = animation.getKey(clipToPlay, animationSpeed, i * 4 + 2, 0);
 			Matrix4D sc = Matrix4D::getScaleMatrix(scale);
-			Vector4D vel = animation.getKey(clipToPlay, animationSpeed, k * 4 + 3, 0);
-			Matrix4D res = po * ro * sc;
-			skeleton.joints.at(k).localTransform = res;
+			Vector4D vel = animation.getKey(clipToPlay, animationSpeed, i * 4 + 3, 0);
+			Matrix4D res = (po * ro) * sc;
+			skeleton.joints->at(i).localTransform = res;
 		}
 		skeleton.update(0);
 	}
-	void draw(Matrix4D viewMatrix, Matrix4D perspectiveProjection)
+	void draw()
 	{
-		// draw skeleton lines using the old openGL pipeline
-		glUseProgram(0);
-		glMatrixMode(GL_MODELVIEW);
-		glLoadMatrixf((GLfloat*)&viewMatrix);
-		glMatrixMode(GL_PROJECTION);
-		auto dood = (perspectiveProjection);
-		glLoadMatrixf((GLfloat*)&dood);
-
-		for (int i = 0; i < skeleton.joints.size(); ++i)
+		for (int i = 0; i < skeleton.joints->size(); ++i)
 		{
-			Joint joint = skeleton.joints.at(i);
+			Joint joint = skeleton.joints->at(i);
 			Vector4D a = joint.worldspaceTransform.getPositionVector();
 			glBegin(GL_LINES);
 			if (drawSkeleton)
@@ -60,8 +49,7 @@ public:
 				if (joint.parent != -1)
 				{
 					glColor3f(255, 0, 0);
-					Vector4D a = joint.worldspaceTransform.getPositionVector();
-					Vector4D b = skeleton.joints.at(joint.parent).worldspaceTransform.getPositionVector();
+					Vector4D b = skeleton.joints->at(joint.parent).worldspaceTransform.getPositionVector();
 					glVertex3f(a[0], a[1], a[2]);
 					glVertex3f(b[0], b[1], b[2]);
 				}
@@ -96,6 +84,7 @@ public:
 			glEnd();
 		}
 	}
+
 	void ds()
 	{
 		drawSkeleton = !drawSkeleton;
@@ -104,6 +93,7 @@ public:
 	{
 		drawBalls = !drawBalls;
 	}
+
 private:
 	Skeleton skeleton;
 	Animation animation;

@@ -168,6 +168,16 @@ public:
 
 		return result;
 	}
+	static Matrix4D perspective(float n, float f, float right, float left, float top, float bot)
+	{
+		Matrix4D result(
+			(2 * n) / (right - left), 0, (right + left) / (right - left), 0,
+			0, (2 * n) / (top - bot), (top + bot) / (top - bot), 0,
+			0, 0, -((f + n) / (f - n)), -((2 * f * n) / (f - n)),
+			0, 0, -1, 0
+		);
+		return result;
+	}
 	Vector4D getPositionVec()
 	{
 		return Vector4D(matrix[3], matrix[7], matrix[11], matrix[15]);
@@ -530,8 +540,8 @@ public:
 	static Matrix4D lookAt(Vector4D position, Vector4D target, Vector4D up)
 	{
 		Vector4D f = (target - position);
-		Vector4D u = Vector4D::normalize3(up);
-		Vector4D s = Vector4D::normalize3(Vector4D::cross(f, u));
+		Vector4D u = Vector4D::normalize(up);
+		Vector4D s = Vector4D::normalize(Vector4D::cross(f, u));
 		u = Vector4D::cross(s, f);
 
 		float temp[] = { s[0],  s[1],  s[2], -(Vector4D::dot(s, position)),
@@ -547,7 +557,14 @@ public:
 			matrix[4] << " : " << matrix[5] << " : " << matrix[6] << " : " << matrix[7] << "\n" <<
 			matrix[8] << " : " << matrix[9] << " : " << matrix[10] << " : " << matrix[11] << "\n" <<
 			matrix[12] << " : " << matrix[13] << " : " << matrix[14] << " : " << matrix[15] << std::endl;
-
+	}
+	void printPosition() 
+	{
+		std::cout <<
+			matrix[3] << "\n" <<
+			matrix[7] << "\n" <<
+			matrix[11] << "\n" <<
+			matrix[15] << std::endl;
 	}
 
 private:

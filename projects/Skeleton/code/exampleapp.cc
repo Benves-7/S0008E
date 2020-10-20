@@ -14,25 +14,20 @@
 using namespace Display;
 namespace Example
 {
-
-	TextureResource tex;
-
 	Matrix4D perspectiveProjection;
 
-	Vector4D cameraPos = Vector4D(0.0f, 1.0f, 5.0f, 1);
+	Vector4D cameraPos = Vector4D(-1.0f, 0.0f, 5.0f, 1);
 	Vector4D cameraFront = Vector4D(0.0f, 0.0f, -1.0f, 1);
 	Vector4D cameraUp = Vector4D(0.0f, 1.0f, 0.0f, 1);
 
 	Vector4D position = Vector4D(0.0f, 0.0f, -1.0f, 1.0f);
-	Matrix4D rotX = Matrix4D::rotX(0);
-	Matrix4D rotY = Matrix4D::rotY(0);
 
 	bool click = false;
 	bool isHeldDown = false;
 
 	int windowSizeX;
 	int windowSizeY;
-	float fov = 75.0f;
+	float fov = 90.0f;
 
 	float lastX, lastY, yaw = -90.0f, pitch = 0.0f;
 
@@ -132,12 +127,16 @@ namespace Example
 
 				if (key == GLFW_KEY_Y && action == GLFW_PRESS)
 					soldier.db();
+
+				//if (key == GLFW_KEY_G)
+
 			});
+
 
 		if (this->window->Open())
 		{
 			// set clear color to gray
-			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 			this->window->GetSize(windowSizeX, windowSizeY);
 
@@ -155,21 +154,29 @@ namespace Example
 	//------------------------------------------------------------------------------
 	/**
 	*/
-	void
-		ExampleApp::Run()
+	void ExampleApp::Run()
 	{
-		std::chrono::high_resolution_clock clock = std::chrono::high_resolution_clock();
 		auto start = clock.now();
 
 		while (this->window->IsOpen() && true)
 		{
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			this->window->Update();
+
+			glUseProgram(0);
+			glMatrixMode(GL_MODELVIEW);
 			Matrix4D view = Matrix4D::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+			auto viewMat = Matrix4D::transpose(view);
+			glLoadMatrixf((GLfloat*)&viewMat);
+			glMatrixMode(GL_PROJECTION);
+			auto dood = (perspectiveProjection);
+			glLoadMatrixf((GLfloat*)&dood);
 
-			soldier.update(clock, start);
+			float runtime = std::chrono::duration_cast<ms>(clock.now() - start).count();
 
-			soldier.draw(Matrix4D::transpose(view), perspectiveProjection);
+			soldier.update(runtime);
+
+			soldier.draw();
 
 			this->window->SwapBuffers();
 		}
