@@ -141,9 +141,12 @@ namespace Example
 
 				if (key == GLFW_KEY_T && action == GLFW_PRESS)
 					soldier.ds();
-
 				if (key == GLFW_KEY_Y && action == GLFW_PRESS)
 					soldier.db();
+				if (key == GLFW_KEY_M && action == GLFW_PRESS)
+					soldier.dm();
+				if (key == GLFW_KEY_P && action == GLFW_PRESS)
+					soldier.ra();
 
 				//if (key == GLFW_KEY_G)
 
