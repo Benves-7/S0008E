@@ -16,10 +16,12 @@ using namespace std;
 
 struct Joint
 {
-    std::string name;
+    string name;
     int index, parent;
     vector<int> children;
     Matrix4D localTransform, worldspaceTransform;
+
+    //inverseBindPose? 
 };
 
 class Skeleton

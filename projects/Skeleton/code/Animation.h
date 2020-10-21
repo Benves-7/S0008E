@@ -83,7 +83,7 @@ public:
 };
 typedef Vector4D* keys;
 
-
+using namespace std;
 using namespace CoreAnimation;
 class Animation
 {
@@ -108,13 +108,14 @@ public:
 
 	void loadAnimations(char* filename)
     {
-        std::ifstream file;
-        file.open(filename, std::ifstream::in | std::ifstream::binary);
+        ifstream file;
+        file.open(filename, ifstream::in | ifstream::binary);
         file.seekg(0, file.end);
         unsigned int length = file.tellg();
         file.seekg(0, file.beg);
         char* ptr = new char[length];
         file.read(ptr, length);
+        file.close();
 
 
 
@@ -166,7 +167,7 @@ public:
         }
     }
 
-    CoreAnimation::Nax3Header* header;
+    Nax3Header* header;
 
     Clip* clips;
     keys keyBuffer;

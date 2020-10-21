@@ -1,6 +1,7 @@
 #pragma once
 #include "Skeleton.h"
 #include "Animation.h"
+#include "Graphics.h"
 #include "Cubesphere.h"
 #include <GL/GLU.h>
 
@@ -17,23 +18,28 @@ public:
 		skeleton.loadSkeleton("Unit_Footman.constants");
 
 		animation.loadAnimations("Unit_Footman.nax3");
+
+		graphics.loadMesh("Unit_Footman.nvx2");
 	}
 	void update(float runtime)
 	{
 		float animationSpeed = runtime / animation.clips[clipToPlay].keyDuration;
 
-		for (int i = 0; i < skeleton.joints->size(); ++i)
+		if (runAnimation)
 		{
-			//Load animation data for one key in a clip
-			Vector4D pos = animation.getKey(clipToPlay, animationSpeed, i * 4, 0);
-			Matrix4D po = Matrix4D::getPositionMatrix(pos);
-			Vector4D rot = animation.getKey(clipToPlay, animationSpeed, i * 4 + 1, 1);
-			Matrix4D ro = Matrix4D::getRotationFromQuaternian(rot);
-			Vector4D scale = animation.getKey(clipToPlay, animationSpeed, i * 4 + 2, 0);
-			Matrix4D sc = Matrix4D::getScaleMatrix(scale);
-			Vector4D vel = animation.getKey(clipToPlay, animationSpeed, i * 4 + 3, 0);
-			Matrix4D res = (po * ro) * sc;
-			skeleton.joints->at(i).localTransform = res;
+			for (int i = 0; i < skeleton.joints->size(); ++i)
+			{
+				//Load animation data for one key in a clip
+				Vector4D pos = animation.getKey(clipToPlay, animationSpeed, i * 4, 0);
+				Matrix4D po = Matrix4D::getPositionMatrix(pos);
+				Vector4D rot = animation.getKey(clipToPlay, animationSpeed, i * 4 + 1, 1);
+				Matrix4D ro = Matrix4D::getRotationFromQuaternian(rot);
+				Vector4D scale = animation.getKey(clipToPlay, animationSpeed, i * 4 + 2, 0);
+				Matrix4D sc = Matrix4D::getScaleMatrix(scale);
+				Vector4D vel = animation.getKey(clipToPlay, animationSpeed, i * 4 + 3, 0);
+				Matrix4D res = (po * ro) * sc;
+				skeleton.joints->at(i).localTransform = res;
+			}
 		}
 		skeleton.update(0);
 	}
@@ -81,6 +87,10 @@ public:
 					}
 				}
 			}
+			if (drawMesh)
+			{
+				// 
+			}
 			glEnd();
 		}
 	}
@@ -93,6 +103,14 @@ public:
 	{
 		drawBalls = !drawBalls;
 	}
+	void dm()
+	{
+		drawMesh = !drawMesh;
+	}
+	void ra()
+	{
+		runAnimation = !runAnimation;
+	}
 
 	void setAnimationClip(int i)
 	{
@@ -102,10 +120,13 @@ public:
 private:
 	Skeleton skeleton;
 	Animation animation;
+	Graphics graphics;
 
 	unsigned int clipToPlay = 0;
 
 	bool drawSkeleton = true;
 	bool drawBalls = true;
+	bool drawMesh = true;
+	bool runAnimation = true;
 
 };
