@@ -118,6 +118,23 @@ namespace Example
 				{
 					cameraPos = cameraPos - (Vector4D::normalize(Vector4D::cross(cameraFront, cameraUp)) * speed);
 				}
+				if (key == GLFW_KEY_1)
+					soldier.setAnimationClip(0);
+				if (key == GLFW_KEY_2)
+					soldier.setAnimationClip(1);
+				if (key == GLFW_KEY_3)
+					soldier.setAnimationClip(2);
+				if (key == GLFW_KEY_4)
+					soldier.setAnimationClip(3);
+				if (key == GLFW_KEY_5)
+					soldier.setAnimationClip(4);
+				if (key == GLFW_KEY_6)
+					soldier.setAnimationClip(5);
+				if (key == GLFW_KEY_7)
+					soldier.setAnimationClip(6);
+				if (key == GLFW_KEY_8)
+					soldier.setAnimationClip(7);
+
 
 				if (key == GLFW_KEY_ESCAPE)
 					this->window->Close();

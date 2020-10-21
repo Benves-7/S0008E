@@ -94,6 +94,11 @@ public:
 		drawBalls = !drawBalls;
 	}
 
+	void setAnimationClip(int i)
+	{
+		clipToPlay = i;
+	}
+
 private:
 	Skeleton skeleton;
 	Animation animation;

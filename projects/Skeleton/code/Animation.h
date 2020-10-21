@@ -96,7 +96,8 @@ public:
         float diff = i - flooredI;
 
         Clip clip = clips[clipIndex];
-        unsigned int curve = clips->curves[curveIndex].firstKeyIndex;
+        Curve cu = clip.curves[curveIndex];
+        unsigned int curve = cu.firstKeyIndex;
 
         if (type == 0) // lerp for vectors.
             return Vector4D::Lerp( keyBuffer[curve + (flooredI + 0) % clip.numKeys * clip.keyStride], keyBuffer[curve + (flooredI + 1) % clip.numKeys * clip.keyStride], diff);
