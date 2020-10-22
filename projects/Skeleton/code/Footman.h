@@ -15,11 +15,13 @@ public:
 
 	void load()
 	{
+		// Skeleton
 		skeleton.loadSkeleton("Unit_Footman.constants");
-
+		// Animation
 		animation.loadAnimations("Unit_Footman.nax3");
-
+		// Graphics
 		graphics.loadMesh("Unit_Footman.nvx2");
+		graphics.setupMesh();
 	}
 	void update(float runtime)
 	{
@@ -87,11 +89,11 @@ public:
 					}
 				}
 			}
+			glEnd();
 			if (drawMesh)
 			{
-				// 
+				graphics.draw();
 			}
-			glEnd();
 		}
 	}
 

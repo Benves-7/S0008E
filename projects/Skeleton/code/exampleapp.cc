@@ -148,8 +148,6 @@ namespace Example
 				if (key == GLFW_KEY_P && action == GLFW_PRESS)
 					soldier.ra();
 
-				//if (key == GLFW_KEY_G)
-
 			});
 
 

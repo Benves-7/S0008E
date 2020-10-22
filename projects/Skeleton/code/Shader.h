@@ -14,6 +14,11 @@ public:
 	{ 
 		this->program = glCreateProgram(); 
 	}
+	void loadShaders(const char* vs, const char* fs)
+	{
+		loadVertexShader(vs);
+		loadFragmentShader(fs);
+	}
 	void loadVertexShader(const char* filename)
 	{
 		std::ifstream inFile;

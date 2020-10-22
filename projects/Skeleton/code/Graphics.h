@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vector4D.h"
+#include "GraphicsNode.h"
 #include <vector>
 #include <fstream>
 
@@ -107,8 +108,8 @@ struct vertexComponent
 class Graphics
 {
 public:
-	Graphics() {}
-	~Graphics() {}
+    Graphics() {}
+    ~Graphics() {}
 
     void loadMesh(char* fileName)
     {
@@ -123,6 +124,7 @@ public:
 
         Nvx2Header* h = (Nvx2Header*)ptr;
         header = h;
+        header->numIndices *= 3;
 
         numGroups = h->numGroups;
         numVertices = h->numVertices;
@@ -130,12 +132,12 @@ public:
         numIndices = h->numIndices;
         numEdges = h->numEdges;
         vertexComponentMask = h->vertexComponentMask;
-        groupDataSize  = 6 * sizeof(unsigned int) * numGroups;                          // Nvx2Group contains 6 unsigned int.
+        groupDataSize = 6 * sizeof(unsigned int) * numGroups;                          // Nvx2Group contains 6 unsigned int.
         vertexDataSize = numVertices * vertexWidth * sizeof(GLfloat);                   // selfexplaned.
-        indexDataSize  = 3 * sizeof(int) * numIndices;                                  // numIndices is a group of 3 int.
+        indexDataSize = 3 * sizeof(int) * numIndices;                                  // numIndices is a group of 3 int.
 
         vertexDataPtr = ((uchar*)ptr) + groupDataSize;
-        indexDataPtr  = ((uchar*)vertexDataPtr) + vertexDataSize;
+        indexDataPtr = ((uchar*)vertexDataPtr) + vertexDataSize;
 
         ptr += sizeof(Nvx2Header);
 
@@ -157,7 +159,7 @@ public:
             Format fmt;
             size_t index = 0;
 
-            if (vertexComponentMask & (1<<i))
+            if (vertexComponentMask & (1 << i))
             {
                 switch (1 << i)
                 {
@@ -248,8 +250,22 @@ public:
         }
     }
 
+    void draw()
+    {
+        //
+    }
+
+    void setupMesh()
+    {
+        gNode.setup(indexDataPtr, vertexDataPtr, indexDataSize, vertexDataSize, numVertices, header->numIndices);
+    }
+
+    // ------------------------------------------------------------------------
+
+    GraphicsNode gNode;
+
     Nvx2Header* header;
-    
+
     vector<PrimitiveGroup> primGroups;
     vector<vertexComponent> vertexComponents;
 
