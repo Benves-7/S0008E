@@ -13,15 +13,15 @@ public:
 	Footman() {};
 	~Footman() {};
 
-	void load()
+	void load(Matrix4D projectionMatrix, Matrix4D* viewMatrix)
 	{
+
 		// Skeleton
 		skeleton.loadSkeleton("Unit_Footman.constants");
 		// Animation
 		animation.loadAnimations("Unit_Footman.nax3");
 		// Graphics
 		graphics.loadMesh("Unit_Footman.nvx2");
-		graphics.setupMesh();
 	}
 	void update(float runtime)
 	{
@@ -90,10 +90,12 @@ public:
 				}
 			}
 			glEnd();
-			if (drawMesh)
-			{
-				graphics.draw();
-			}
+		}
+		if (drawMesh)
+		{
+			graphics.setupMesh();
+			graphics.draw();
+			graphics.unbindBuffers();
 		}
 	}
 
@@ -128,7 +130,7 @@ private:
 
 	bool drawSkeleton = true;
 	bool drawBalls = true;
-	bool drawMesh = true;
+	bool drawMesh = false;
 	bool runAnimation = true;
 
 };

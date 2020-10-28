@@ -39,5 +39,8 @@ namespace Example
 
 		Footman soldier;
 
+		Matrix4D* view;
+		Matrix4D perspectiveProjection;
+
 	};
 }

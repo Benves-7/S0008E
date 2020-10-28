@@ -10,6 +10,12 @@ class Shader
 public:
 	Shader() {}
 	~Shader() {}
+
+	void setup()
+	{
+		loadShaders("vs.shader", "fs.shader");
+		linkShaders();
+	}
 	void createProgram() 
 	{ 
 		this->program = glCreateProgram(); 
@@ -115,7 +121,6 @@ public:
 	}
 	void modifyUniformMatrix(std::string name, float* mat)
 	{
-		cout << this->program << endl;
 		unsigned int uniform = glGetUniformLocation(this->program, name.c_str());
 		glUniformMatrix4fv(uniform, 1, GL_TRUE, mat);
 	}

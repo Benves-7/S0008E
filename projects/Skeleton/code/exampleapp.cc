@@ -8,14 +8,10 @@
 #include <cstring>
 
 #define PI 3.14159265
-#define WIDTH 400
-#define HEIGHT 300
 
 using namespace Display;
 namespace Example
 {
-	Matrix4D perspectiveProjection;
-
 	Vector4D cameraPos = Vector4D(-1.0f, 0.0f, 5.0f, 1);
 	Vector4D cameraFront = Vector4D(0.0f, 0.0f, -1.0f, 1);
 	Vector4D cameraUp = Vector4D(0.0f, 1.0f, 0.0f, 1);
@@ -160,7 +156,7 @@ namespace Example
 
 			perspectiveProjection = Matrix4D::perspective(nvgDegToRad(fov), (float)windowSizeX / (float)windowSizeY, 1000, 0.1);
 
-			soldier.load();
+			soldier.load(perspectiveProjection, view);
 			
 			return true;
 		}

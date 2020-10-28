@@ -38,7 +38,7 @@ public:
 		bindVertexBuffer(vb, vbSize);
 		bindIndexBuffer(ib, ibSize);
 		loadMeshBuffers();
-		unBindBuffers();
+		//unBindBuffers();
 	}
 
 	void setupHandles()
@@ -71,6 +71,10 @@ public:
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, ibSize, ib, GL_STATIC_DRAW);
 	}
+	int  getIndexBufferSize()
+	{
+		return sizeOfIndexBuffer;
+	}
 	void loadMeshBuffers()
 	{
 		int offset = 0;
@@ -78,24 +82,25 @@ public:
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*)0);
 		offset += sizeof(GLfloat) * 3;
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 4, GL_BYTE, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
+		glVertexAttribPointer(1, 4, GL_BYTE, GL_FALSE, 10 * sizeof(GLbyte), (void*)offset);
 		offset += sizeof(GLbyte) * 4;
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
 		offset += sizeof(GLfloat) * 2;
 		glEnableVertexAttribArray(3);
-		glVertexAttribPointer(3, 4, GL_BYTE, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
+		glVertexAttribPointer(3, 4, GL_BYTE, GL_FALSE, 10 * sizeof(GLbyte), (void*)offset);
 		offset += sizeof(GLbyte) * 4;
 		glEnableVertexAttribArray(4);
-		glVertexAttribPointer(4, 4, GL_BYTE, GL_TRUE, 10 * sizeof(GLfloat), (void*)offset);
+		glVertexAttribPointer(4, 4, GL_BYTE, GL_TRUE, 10 * sizeof(GLbyte), (void*)offset);
 		offset += sizeof(GLbyte) * 4;
 		glEnableVertexAttribArray(5);
-		glVertexAttribPointer(5, 4, GL_UNSIGNED_BYTE, GL_TRUE, 10 * sizeof(GLfloat), (void*)offset);
+		glVertexAttribPointer(5, 4, GL_UNSIGNED_BYTE, GL_TRUE, 10 * sizeof(GLbyte), (void*)offset);
 		offset += sizeof(GLbyte) * 4;
 		glEnableVertexAttribArray(6);
-		glVertexAttribPointer(6, 4, GL_UNSIGNED_BYTE, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
+		glVertexAttribPointer(6, 4, GL_UNSIGNED_BYTE, GL_FALSE, 10 * sizeof(GLbyte), (void*)offset);
 		glBindVertexArray(0);
 	}
+
 	void unBindBuffers()
 	{
 		glBindVertexArray(0);

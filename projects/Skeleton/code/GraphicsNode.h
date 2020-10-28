@@ -9,9 +9,6 @@
 class GraphicsNode
 {
 public:
-
-	Camera camera;
-
 	GraphicsNode() {}
 	~GraphicsNode() {}
 
@@ -39,17 +36,35 @@ public:
 	{
 		return &shader;
 	}
+	void setProjectionMatrix(Matrix4D proj)
+	{
+		projection = proj;
+	}
+	void setViewMatrix(Matrix4D* v)
+	{
+		view = v;
+	}
+	void setCamerapos(Vector4D cam)
+	{
+		camera = cam;
+	}
 
 	void setup(void* ib, void* vb, int ibSize, int vbSize, int numVerticies, int numIndicies)
 	{
 		mesh.setup(ib,vb,ibSize,vbSize, numVerticies, numIndicies);
-		shader.loadShaders("vs.shader", "fs.shader");
-		texId = texture.bind(texture.loadFromFile("Footman_Diffuse.tga"));
-
+		shader.setup();
+		//texId = texture.bind(texture.loadFromFile("Footman_Diffuse.tga"));
 	}
 	void draw()
 	{
+		shader.useProgram();
+		//shader.modifyUniformMatrix("view", view->getPointer());
+		//shader.modifyUniformMatrix("projection", projection.getPointer());
+		//shader.modifyUniformVector("cameraPosition", camera);
+		//shader.modifyUniformMatrix("transform", transform.getPointer());
+		int i = mesh.getIndexBufferSize();
 
+		glDrawElements(GL_TRIANGLES, i, GL_UNSIGNED_INT, 0);
 	}
 
 
@@ -59,6 +74,10 @@ private:
 	MeshResource mesh;
 	TextureResource texture;
 	unsigned int texId;
+
+	Matrix4D projection;
+	Matrix4D* view;
+	Vector4D camera;
 
 	Matrix4D transform;
 

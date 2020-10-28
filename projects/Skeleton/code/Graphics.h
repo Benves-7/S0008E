@@ -252,13 +252,99 @@ public:
 
     void draw()
     {
-        //
+        //glUseProgram(0);
+        glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
     }
 
     void setupMesh()
     {
-        gNode.setup(indexDataPtr, vertexDataPtr, indexDataSize, vertexDataSize, numVertices, header->numIndices);
+        generateHandels();
+        setupBuffers();
+        bindBuffers(vertexDataPtr, vertexDataSize, indexDataPtr, indexDataSize);
+        loadMeshBuffers();
     }
+
+    void generateHandels()
+    {
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+
+        glGenVertexArrays(1, &VAO);
+    }
+    void setupBuffers()
+    {
+        glGenBuffers(1, &VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+        glGenBuffers(1, &EBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+    }
+    void bindBuffers(const void* vb, unsigned int vbSize, const void* ib, unsigned int ibSize)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vbSize, vb, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, ibSize, ib, GL_STATIC_DRAW);
+
+        glBindVertexArray(VAO);
+    }
+    void loadMeshBuffers()
+    {
+        int offset = 0;
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*)0);
+        offset += sizeof(GLfloat) * 3;
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 4, GL_BYTE, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
+        offset += sizeof(GLbyte) * 4;
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
+        offset += sizeof(GLfloat) * 2;
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_BYTE, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
+        offset += sizeof(GLbyte) * 4;
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_BYTE, GL_TRUE, 10 * sizeof(GLfloat), (void*)offset);
+        offset += sizeof(GLbyte) * 4;
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 4, GL_UNSIGNED_BYTE, GL_TRUE, 10 * sizeof(GLfloat), (void*)offset);
+        offset += sizeof(GLbyte) * 4;
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_UNSIGNED_BYTE, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
+        glBindVertexArray(0);
+        //int offset = 0;
+        //glEnableVertexAttribArray(0);
+        //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*)0);
+        //offset += sizeof(GLfloat) * 3;
+        //glEnableVertexAttribArray(1);
+        //glVertexAttribPointer(1, 4, GL_BYTE, GL_FALSE, 10 * sizeof(GLbyte), (void*)offset);
+        //offset += sizeof(GLbyte) * 4;
+        //glEnableVertexAttribArray(2);
+        //glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
+        //offset += sizeof(GLfloat) * 2;
+        //glEnableVertexAttribArray(3);
+        //glVertexAttribPointer(3, 4, GL_BYTE, GL_FALSE, 10 * sizeof(GLbyte), (void*)offset);
+        //offset += sizeof(GLbyte) * 4;
+        //glEnableVertexAttribArray(4);
+        //glVertexAttribPointer(4, 4, GL_BYTE, GL_TRUE, 10 * sizeof(GLbyte), (void*)offset);
+        //offset += sizeof(GLbyte) * 4;
+        //glEnableVertexAttribArray(5);
+        //glVertexAttribPointer(5, 4, GL_UNSIGNED_BYTE, GL_TRUE, 10 * sizeof(GLbyte), (void*)offset);
+        //offset += sizeof(GLbyte) * 4;
+        //glEnableVertexAttribArray(6);
+        //glVertexAttribPointer(6, 4, GL_UNSIGNED_BYTE, GL_FALSE, 10 * sizeof(GLbyte), (void*)offset);
+        //glBindVertexArray(0);
+    }
+
+    void unbindBuffers()
+    {
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+
 
     // ------------------------------------------------------------------------
 
@@ -283,4 +369,8 @@ public:
     unsigned int numIndices;
     unsigned int numEdges;
     unsigned int vertexComponentMask;
+
+    uint32 EBO;
+    uint32 VBO;
+    uint32 VAO;
 };
