@@ -7,35 +7,11 @@
 
 #include <cstring>
 
-#define PI 3.14159265
+#define PI 3.14159265359
 
 using namespace Display;
 namespace Example
 {
-	Vector4D cameraPos = Vector4D(-1.0f, 0.0f, 5.0f, 1);
-	Vector4D cameraFront = Vector4D(0.0f, 0.0f, -1.0f, 1);
-	Vector4D cameraUp = Vector4D(0.0f, 1.0f, 0.0f, 1);
-
-	Vector4D position = Vector4D(0.0f, 0.0f, -1.0f, 1.0f);
-
-	bool click = false;
-	bool isHeldDown = false;
-
-	int windowSizeX;
-	int windowSizeY;
-	float fov = 90.0f;
-
-	float lastX, lastY, yaw = -90.0f, pitch = 0.0f;
-
-	float radianConversion = PI / 180;
-
-	ExampleApp::ExampleApp()
-	{
-	}
-	ExampleApp::~ExampleApp()
-	{
-	}
-
 	bool ExampleApp::Open()
 	{
 		App::Open();
@@ -50,19 +26,22 @@ namespace Example
 				else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
 				{
 					click = false;
-					isHeldDown = false;
+					firstMouse = true;
 				}
 			});
 		window->SetMouseMoveFunction([this](float64 xPos, float64 yPos)
 			{
 				if (click)
 				{
-					if (!isHeldDown)
+					if (firstMouse)
 					{
 						lastX = xPos;
 						lastY = yPos;
-						isHeldDown = true;
+                        firstMouse = false;
 					}
+
+                    if (lastX > 10000)
+                        lastX = 0;
 
 					float xOffset = xPos - lastX;
 					float yOffset = lastY - yPos;
@@ -70,7 +49,7 @@ namespace Example
 					lastX = xPos;
 					lastY = yPos;
 
-					float sensitivity = 0.2;
+					float sensitivity = 0.3;
 					xOffset *= sensitivity;
 					yOffset *= sensitivity;
 
@@ -87,33 +66,30 @@ namespace Example
 					}
 
 					Vector4D front;
-					front[0] = cos(yaw * radianConversion) * cos(pitch * radianConversion);
-					front[1] = sin(pitch * radianConversion);
-					front[2] = sin(yaw * radianConversion) * cos(pitch * radianConversion);
-					front[3] = 1;
-					front.normalize();
-					cameraFront = front;
+                    front[0] = cosf(yaw*(PI/180.0f)) * cosf(pitch*(PI/180.0f));
+                    front[1] = sinf(pitch*(PI / 180.0f));
+                    front[2] = sinf(yaw*(PI / 180.0f)) * cosf(pitch*(PI / 180.0f));
+					cameraFront = front.normalize();
 				}
 			});
 		window->SetKeyPressFunction([this](int32 key, int32 i, int32 action, int32 modifier)
 			{
-				float speed = 0.05f;
-				if (key == GLFW_KEY_W)
-				{
-					cameraPos = cameraPos + (cameraFront * speed);
-				}
-				if (key == GLFW_KEY_S)
-				{
-					cameraPos = cameraPos - (cameraFront * speed);
-				}
-				if (key == GLFW_KEY_D)
-				{
-					cameraPos = cameraPos + (Vector4D::normalize(Vector4D::cross(cameraFront, cameraUp)) * speed);
-				}
-				if (key == GLFW_KEY_A)
-				{
-					cameraPos = cameraPos - (Vector4D::normalize(Vector4D::cross(cameraFront, cameraUp)) * speed);
-				}
+                if (key == GLFW_KEY_ESCAPE) {
+                    this->window->Close();
+                }
+                if (key == GLFW_KEY_W){
+                    cameraPos = cameraPos + (cameraFront * cameraSpeed);
+                }
+                if (key == GLFW_KEY_S) {
+                    cameraPos = cameraPos - (cameraFront * cameraSpeed);
+                }
+                if (key == GLFW_KEY_D) {
+                    cameraPos = cameraPos + (cameraFront.crossProduct(cameraUp)).normalize() * cameraSpeed;
+                }
+                if (key == GLFW_KEY_A) {
+                    cameraPos = cameraPos - (cameraFront.crossProduct(cameraUp)).normalize() * cameraSpeed;
+                }
+                // Animations.
 				if (key == GLFW_KEY_1)
 					soldier.setAnimationClip(0);
 				if (key == GLFW_KEY_2)
@@ -131,10 +107,7 @@ namespace Example
 				if (key == GLFW_KEY_8)
 					soldier.setAnimationClip(7);
 
-
-				if (key == GLFW_KEY_ESCAPE)
-					this->window->Close();
-
+                // Drawstates.
 				if (key == GLFW_KEY_T && action == GLFW_PRESS)
 					soldier.ds();
 				if (key == GLFW_KEY_Y && action == GLFW_PRESS)
@@ -142,22 +115,33 @@ namespace Example
 				if (key == GLFW_KEY_M && action == GLFW_PRESS)
 					soldier.dm();
 				if (key == GLFW_KEY_P && action == GLFW_PRESS)
-					soldier.ra();
+					soldier.pa();
 
 			});
-
 
 		if (this->window->Open())
 		{
 			// set clear color to gray
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+            glEnable(GL_DEPTH_TEST);
+            //Perspective projection
+            const float n = 0.1f;
+            const float f = 100000.0f;
+            const float l = -0.1f;
+            const float r = 0.1f;
+            const float t = 0.1f;
+            const float b = -0.1f;
 
-			this->window->GetSize(windowSizeX, windowSizeY);
+            perspectiveProjection = Matrix4D(
+                    (2 * n) / (r - l), 0, ((r + l) / (r - l)), 0,
+                    0, (2 * n) / (t - b), ((t + b) / (t - b)), 0,
+                    0, 0, -((f + n) / (f - n)), -((2 * f*n) / (f - n)),
+                    0, 0, -1, 0
+            );
 
-			perspectiveProjection = Matrix4D::perspective(nvgDegToRad(fov), (float)windowSizeX / (float)windowSizeY, 1000, 0.1);
+			soldier.load();
+			soldier.loadmesh();
 
-			soldier.load(perspectiveProjection, view);
-			
 			return true;
 		}
 		return false;
@@ -171,26 +155,17 @@ namespace Example
 	void ExampleApp::Run()
 	{
 		auto start = clock.now();
+        Vector4D pos = Vector4D(0,0,-4,1);
 
-		while (this->window->IsOpen() && true)
+		while (this->window->IsOpen())
 		{
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			this->window->Update();
+            glClear(GL_COLOR_BUFFER_BIT);
+            glClear(GL_DEPTH_BUFFER_BIT);
 
-			glUseProgram(0);
-			glMatrixMode(GL_MODELVIEW);
-			Matrix4D view = Matrix4D::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-			auto viewMat = Matrix4D::transpose(view);
-			glLoadMatrixf((GLfloat*)&viewMat);
-			glMatrixMode(GL_PROJECTION);
-			auto dood = (perspectiveProjection);
-			glLoadMatrixf((GLfloat*)&dood);
+            lookat = Matrix4D::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
-			float runtime = std::chrono::duration_cast<ms>(clock.now() - start).count();
-
-			soldier.update(runtime);
-
-			soldier.draw();
+			soldier.drawModel(perspectiveProjection*lookat, (Matrix4D::getPositionMatrix(pos)), cameraPos);
 
 			this->window->SwapBuffers();
 		}

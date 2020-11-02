@@ -77,17 +77,28 @@ public:
 	static Vector4D normalize3(Vector4D vec)
 	{
 		float length = vec.length3();
-		return Vector4D(vec[0] / length, vec[1] / length, vec[2] / length, vec[3]);
+		return Vector4D(vec[0] / length, vec[1] / length, vec[2] / length, 1);
 	}
-	void normalize()
-	{
-		float length = this->length();
-		set(cord[0] / length, cord[1] / length, cord[2] / length, cord[3] / length);
-	}
+	Vector4D normalize() const
+    {
+        float l = sqrt((this->cord[0] * this->cord[0]) + (this->cord[1] * this->cord[1]) + (this->cord[2] * this->cord[2]));
+
+        float p1 = cord[0] / l;
+        float p2 = cord[1] / l;
+        float p3 = cord[2] / l;
+        float p4 = 1;// vector[3] / length;
+
+        return Vector4D(p1, p2, p3, p4);
+    }
+//	void normalize()
+//	{
+//		float length = this->length();
+//		set(cord[0] / length, cord[1] / length, cord[2] / length, cord[3] / length);
+//	}
 	void normalize3()
 	{
 		float length = this->length3();
-		set(cord[0] / length, cord[1] / length, cord[2] / length, cord[3]);
+		set(cord[0] / length, cord[1] / length, cord[2] / length, 1);
 	}
 	static Vector4D IBMulti(Vector4D a, Vector4D b)
 	{
@@ -103,8 +114,19 @@ public:
 	}
 	static Vector4D cross(Vector4D lhs, Vector4D rhs)
 	{
-		Vector4D temp((lhs.cord[1] * rhs.cord[2] - lhs.cord[2] * rhs.cord[1]), (lhs.cord[2] * rhs.cord[0] - lhs.cord[0] * rhs.cord[2]), (lhs.cord[0] * rhs.cord[1] - lhs.cord[1] * rhs.cord[0]), 1.0f);
+		Vector4D temp(
+				(lhs.cord[1] * rhs.cord[2] - lhs.cord[2] * rhs.cord[1]),
+				(lhs.cord[2] * rhs.cord[0] - lhs.cord[0] * rhs.cord[2]),
+				(lhs.cord[0] * rhs.cord[1] - lhs.cord[1] * rhs.cord[0]),
+				1.0f);
 		return temp;
+	}
+	Vector4D crossProduct(const Vector4D& inVector) const
+	{
+		return Vector4D((cord[1] * inVector.cord[2]) - (cord[2] * inVector.cord[1]),
+						(cord[2] * inVector.cord[0]) - (cord[0] * inVector.cord[2]),
+						(cord[0] * inVector.cord[1]) - (cord[1] * inVector.cord[0]),
+						1);
 	}
 	static float dot(Vector4D first, Vector4D second)
 	{
@@ -120,7 +142,11 @@ public:
 	}
 	static Vector4D Lerp(Vector4D start, Vector4D end, float percent)
 	{
-		return start + (end - start) * percent;
+	    Vector4D sub = end - start;
+	    Vector4D mul = sub * percent;
+
+	    Vector4D ret = start + mul;
+		return ret;
 	}
 	static Vector4D Slerp(Vector4D first, Vector4D second, float by)
 	{
@@ -146,19 +172,10 @@ public:
 
 		double s0 = cos(theta) - dot * sin_theta / sin_theta_0;
 		double s1 = sin_theta / sin_theta_0;
-		return (first * s0) + (second * s1);
 
-		//float dot = Vector4D::dot((start), (end));
-
-		//dot = clamp(dot, -1.0f, 1.0f);
-
-		//float theta = acos(dot) * percent;
-
-		//Vector4D relVec = end - start * dot; // Might need a look;
-
-		//relVec.normalize();
-
-		//return ((start * cos(theta)) + (relVec * sin(theta)));
+		Vector4D f = (first * s0);
+		Vector4D s = (second * s1);
+		return f + s;
 	}
 
 
@@ -166,11 +183,11 @@ public:
 	{
 		return Vector4D(this->cord[0] * rhs, this->cord[1] * rhs, this->cord[2] * rhs, this->cord[3] * rhs);
 	}
-	Vector4D operator+(Vector4D& rhs)
+	Vector4D operator+(Vector4D rhs) const
 	{
 		return Vector4D((this->cord[0] + rhs.cord[0]), (this->cord[1] + rhs.cord[1]), (this->cord[2] + rhs.cord[2]), (this->cord[3] + rhs.cord[3]));
 	}
-	Vector4D operator-(Vector4D& rhs)
+	Vector4D operator-(Vector4D rhs)
 	{
 		return Vector4D((this->cord[0] - rhs.cord[0]), (this->cord[1] - rhs.cord[1]), (this->cord[2] - rhs.cord[2]), (this->cord[3] - rhs.cord[3]));
 	}

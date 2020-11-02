@@ -76,31 +76,31 @@ public:
 	~Matrix4D() {}
 	float operator[](const int index) const { return matrix[index]; }
 	float& operator[](const int index) { return matrix[index]; }
-	Matrix4D operator*(const Matrix4D& rhs) const
+	Matrix4D operator*(const Matrix4D& inMatrix) const
 	{
-		float returnMatrix[16];
+        float temparr[16];
 
-		returnMatrix[0]  = (matrix[0]  * rhs.matrix[0]) + (matrix[1]  * rhs.matrix[4]) + (matrix[2]  * rhs.matrix[8])  + (matrix[3]  * rhs.matrix[12]);
-		returnMatrix[1]  = (matrix[0]  * rhs.matrix[1]) + (matrix[1]  * rhs.matrix[5]) + (matrix[2]  * rhs.matrix[9])  + (matrix[3]  * rhs.matrix[13]);
-		returnMatrix[2]  = (matrix[0]  * rhs.matrix[2]) + (matrix[1]  * rhs.matrix[6]) + (matrix[2]  * rhs.matrix[10]) + (matrix[3]  * rhs.matrix[14]);
-		returnMatrix[3]  = (matrix[0]  * rhs.matrix[3]) + (matrix[1]  * rhs.matrix[7]) + (matrix[2]  * rhs.matrix[11]) + (matrix[3]  * rhs.matrix[15]);
-									   								  								 								 
-		returnMatrix[4]  = (matrix[4]  * rhs.matrix[0]) + (matrix[5]  * rhs.matrix[4]) + (matrix[6]  * rhs.matrix[8])  + (matrix[7]  * rhs.matrix[12]);
-		returnMatrix[5]  = (matrix[4]  * rhs.matrix[1]) + (matrix[5]  * rhs.matrix[5]) + (matrix[6]  * rhs.matrix[9])  + (matrix[7]  * rhs.matrix[13]);
-		returnMatrix[6]  = (matrix[4]  * rhs.matrix[2]) + (matrix[5]  * rhs.matrix[6]) + (matrix[6]  * rhs.matrix[10]) + (matrix[7]  * rhs.matrix[14]);
-		returnMatrix[7]  = (matrix[4]  * rhs.matrix[3]) + (matrix[5]  * rhs.matrix[7]) + (matrix[6]  * rhs.matrix[11]) + (matrix[7]  * rhs.matrix[15]);
-									   								  
-		returnMatrix[8]  = (matrix[8]  * rhs.matrix[0]) + (matrix[9]  * rhs.matrix[4]) + (matrix[10] * rhs.matrix[8])  + (matrix[11] * rhs.matrix[12]);
-		returnMatrix[9]  = (matrix[8]  * rhs.matrix[1]) + (matrix[9]  * rhs.matrix[5]) + (matrix[10] * rhs.matrix[9])  + (matrix[11] * rhs.matrix[13]);
-		returnMatrix[10] = (matrix[8]  * rhs.matrix[2]) + (matrix[9]  * rhs.matrix[6]) + (matrix[10] * rhs.matrix[10]) + (matrix[11] * rhs.matrix[14]);
-		returnMatrix[11] = (matrix[8]  * rhs.matrix[3]) + (matrix[9]  * rhs.matrix[7]) + (matrix[10] * rhs.matrix[11]) + (matrix[11] * rhs.matrix[15]);
+        temparr[0] = matrix[0] * inMatrix.matrix[0] + matrix[1] * inMatrix.matrix[4] + matrix[2] * inMatrix.matrix[8] + matrix[3] * inMatrix.matrix[12];
+        temparr[1] = matrix[0] * inMatrix.matrix[1] + matrix[1] * inMatrix.matrix[5] + matrix[2] * inMatrix.matrix[9] + matrix[3] * inMatrix.matrix[13];
+        temparr[2] = matrix[0] * inMatrix.matrix[2] + matrix[1] * inMatrix.matrix[6] + matrix[2] * inMatrix.matrix[10] + matrix[3] * inMatrix.matrix[14];
+        temparr[3] = matrix[0] * inMatrix.matrix[3] + matrix[1] * inMatrix.matrix[7] + matrix[2] * inMatrix.matrix[11] + matrix[3] * inMatrix.matrix[15];
 
-		returnMatrix[12] = (matrix[12] * rhs.matrix[0]) + (matrix[13] * rhs.matrix[4]) + (matrix[14] * rhs.matrix[8])  + (matrix[15] * rhs.matrix[12]);
-		returnMatrix[13] = (matrix[12] * rhs.matrix[1]) + (matrix[13] * rhs.matrix[5]) + (matrix[14] * rhs.matrix[9])  + (matrix[15] * rhs.matrix[13]);
-		returnMatrix[14] = (matrix[12] * rhs.matrix[2]) + (matrix[13] * rhs.matrix[6]) + (matrix[14] * rhs.matrix[10]) + (matrix[15] * rhs.matrix[14]);
-		returnMatrix[15] = (matrix[12] * rhs.matrix[3]) + (matrix[13] * rhs.matrix[7]) + (matrix[14] * rhs.matrix[11]) + (matrix[15] * rhs.matrix[15]);
+        temparr[4] = matrix[4] * inMatrix.matrix[0] + matrix[5] * inMatrix.matrix[4] + matrix[6] * inMatrix.matrix[8] + matrix[7] * inMatrix.matrix[12];
+        temparr[5] = matrix[4] * inMatrix.matrix[1] + matrix[5] * inMatrix.matrix[5] + matrix[6] * inMatrix.matrix[9] + matrix[7] * inMatrix.matrix[13];
+        temparr[6] = matrix[4] * inMatrix.matrix[2] + matrix[5] * inMatrix.matrix[6] + matrix[6] * inMatrix.matrix[10] + matrix[7] * inMatrix.matrix[14];
+        temparr[7] = matrix[4] * inMatrix.matrix[3] + matrix[5] * inMatrix.matrix[7] + matrix[6] * inMatrix.matrix[11] + matrix[7] * inMatrix.matrix[15];
 
-		return Matrix4D(returnMatrix);
+        temparr[8] = matrix[8] * inMatrix.matrix[0] + matrix[9] * inMatrix.matrix[4] + matrix[10] * inMatrix.matrix[8] + matrix[11] * inMatrix.matrix[12];
+        temparr[9] = matrix[8] * inMatrix.matrix[1] + matrix[9] * inMatrix.matrix[5] + matrix[10] * inMatrix.matrix[9] + matrix[11] * inMatrix.matrix[13];
+        temparr[10] = matrix[8] * inMatrix.matrix[2] + matrix[9] * inMatrix.matrix[6] + matrix[10] * inMatrix.matrix[10] + matrix[11] * inMatrix.matrix[14];
+        temparr[11] = matrix[8] * inMatrix.matrix[3] + matrix[9] * inMatrix.matrix[7] + matrix[10] * inMatrix.matrix[11] + matrix[11] * inMatrix.matrix[15];
+
+        temparr[12] = matrix[12] * inMatrix.matrix[0] + matrix[13] * inMatrix.matrix[4] + matrix[14] * inMatrix.matrix[8] + matrix[15] * inMatrix.matrix[12];
+        temparr[13] = matrix[12] * inMatrix.matrix[1] + matrix[13] * inMatrix.matrix[5] + matrix[14] * inMatrix.matrix[9] + matrix[15] * inMatrix.matrix[13];
+        temparr[14] = matrix[12] * inMatrix.matrix[2] + matrix[13] * inMatrix.matrix[6] + matrix[14] * inMatrix.matrix[10] + matrix[15] * inMatrix.matrix[14];
+        temparr[15] = matrix[12] * inMatrix.matrix[3] + matrix[13] * inMatrix.matrix[7] + matrix[14] * inMatrix.matrix[11] + matrix[15] * inMatrix.matrix[15];
+
+        return Matrix4D(temparr);
 	}
 	Vector4D operator*(const Vector4D& rhs) const
 	{
@@ -307,7 +307,7 @@ public:
 
 		return rotMat;
 	}
-	static Matrix4D getPositionMatrix(Vector4D& inVector)
+	static Matrix4D getPositionMatrix(Vector4D inVector)
 	{
 		float tempArr[16];
 		tempArr[0] = 1;
@@ -537,11 +537,11 @@ public:
 	{
 		return matrix;
 	}
-	static Matrix4D lookAt(Vector4D position, Vector4D target, Vector4D up)
+	static Matrix4D lookAt(Vector4D position, Vector4D target, Vector4D cameraUp)
 	{
 		Vector4D f = (target - position);
-		Vector4D u = Vector4D::normalize(up);
-		Vector4D s = Vector4D::normalize(Vector4D::cross(f, u));
+		Vector4D u = Vector4D::normalize3(cameraUp);
+		Vector4D s = Vector4D::normalize3(Vector4D::cross(f, u));
 		u = Vector4D::cross(s, f);
 
 		float temp[] = { s[0],  s[1],  s[2], -(Vector4D::dot(s, position)),

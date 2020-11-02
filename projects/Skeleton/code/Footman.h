@@ -3,7 +3,6 @@
 #include "Animation.h"
 #include "Graphics.h"
 #include "Cubesphere.h"
-#include <GL/GLU.h>
 
 #define PI 3.14159265
 
@@ -13,21 +12,24 @@ public:
 	Footman() {};
 	~Footman() {};
 
-	void load(Matrix4D projectionMatrix, Matrix4D* viewMatrix)
+	void load()
 	{
-
 		// Skeleton
 		skeleton.loadSkeleton("Unit_Footman.constants");
 		// Animation
 		animation.loadAnimations("Unit_Footman.nax3");
-		// Graphics
-		graphics.loadMesh("Unit_Footman.nvx2");
 	}
+	void loadmesh()
+    {
+        // Graphics
+        graphics.setup();
+    }
+
 	void update(float runtime)
 	{
 		float animationSpeed = runtime / animation.clips[clipToPlay].keyDuration;
 
-		if (runAnimation)
+		if (playAnimation)
 		{
 			for (int i = 0; i < skeleton.joints->size(); ++i)
 			{
@@ -91,13 +93,20 @@ public:
 			}
 			glEnd();
 		}
-		if (drawMesh)
-		{
-			graphics.setupMesh();
-			graphics.draw();
-			graphics.unbindBuffers();
-		}
+//		if (drawMesh)
+//		{
+//			graphics.setupMesh();
+//			graphics.draw();
+//			graphics.unbindBuffers();
+//		}
 	}
+	void drawModel(Matrix4D view, Matrix4D modelPos, Vector4D camerapos)
+    {
+	    if (drawMesh)
+	    {
+            graphics.draw(view, modelPos, camerapos);
+        }
+    }
 
 	void ds()
 	{
@@ -111,9 +120,9 @@ public:
 	{
 		drawMesh = !drawMesh;
 	}
-	void ra()
+	void pa()
 	{
-		runAnimation = !runAnimation;
+		playAnimation = !playAnimation;
 	}
 
 	void setAnimationClip(int i)
@@ -131,6 +140,6 @@ private:
 	bool drawSkeleton = true;
 	bool drawBalls = true;
 	bool drawMesh = false;
-	bool runAnimation = true;
+	bool playAnimation = true;
 
 };

@@ -5,6 +5,8 @@
 #include <vector>
 #include <fstream>
 
+#define NAX2_MAGICNUMBER 'NVX2'
+
 namespace CoreGraphics
 {
     struct Nvx2Header
@@ -17,7 +19,6 @@ namespace CoreGraphics
         unsigned int numEdges;
         unsigned int vertexComponentMask;
     };
-
     struct Nvx2Group
     {
         unsigned int firstVertex;
@@ -27,7 +28,6 @@ namespace CoreGraphics
         unsigned int firstEdge;
         unsigned int numEdges;
     };
-
     struct PrimitiveGroup
     {
         unsigned int numVerticies;
@@ -35,7 +35,6 @@ namespace CoreGraphics
         unsigned int numIndicies;
         unsigned int primitiveTopology;
     };
-
     enum SemanticName
     {
         Position = 0,
@@ -50,7 +49,6 @@ namespace CoreGraphics
 
         Invalid,
     };
-
     enum Format
     {
         Float,      //> one-component float, expanded to (float, 0, 0, 1)
@@ -66,7 +64,6 @@ namespace CoreGraphics
         Short2N,    //> two-component normalized signed short (value / 32767.0f)
         Short4N,    //> four-component normalized signed short (value / 32767.0f)
     };
-
     enum N2VertexComponent
     {
         N2Coord = (1 << 0),      // 3 floats
@@ -98,11 +95,29 @@ namespace CoreGraphics
 
 using namespace std; 
 using namespace CoreGraphics;
-struct vertexComponent
-{
+struct vertexComponent {
+    vertexComponent(SemanticName n, Format f, int size, uint isN, int sizeA)
+    {
+        name = n;
+        format = f;
+        sizeInBytes = size;
+        isNormalized = isN;
+        sizeArray = sizeA;
+    }
     SemanticName name;
-    unsigned int index;
     Format format;
+    int sizeInBytes;
+    unsigned int isNormalized;
+    int sizeArray;
+    unsigned int getType()
+    {
+        if (this->format == Format::Float3 ||this->format == Format::Float2)
+            return 0x1406;
+        else if (this->format == Format::Byte4N)
+            return 0x1400;
+        else if (this->format == Format::UByte4 || this->format == Format::UByte4N)
+            return 0x1401;
+    }
 };
 
 class Graphics
@@ -111,10 +126,19 @@ public:
     Graphics() {}
     ~Graphics() {}
 
-    void loadMesh(char* fileName)
+    void setup()
+    {
+        loadMesh("Unit_Footman.nvx2");
+        setupMesh();
+    }
+
+    bool loadMesh(char* fileName)
     {
         std::ifstream file;
         file.open(fileName, std::ifstream::in | std::ifstream::binary);
+        if (!file)
+            return false;
+
         file.seekg(0, file.end);
         unsigned int length = file.tellg();
         file.seekg(0, file.beg);
@@ -122,174 +146,245 @@ public:
         file.read(ptr, length);
         file.close();
 
-        Nvx2Header* h = (Nvx2Header*)ptr;
-        header = h;
+        header = (Nvx2Header*)ptr;
         header->numIndices *= 3;
 
-        numGroups = h->numGroups;
-        numVertices = h->numVertices;
-        vertexWidth = h->vertexWidth;
-        numIndices = h->numIndices;
-        numEdges = h->numEdges;
-        vertexComponentMask = h->vertexComponentMask;
-        groupDataSize = 6 * sizeof(unsigned int) * numGroups;                          // Nvx2Group contains 6 unsigned int.
+        if(header->magic != NAX2_MAGICNUMBER)
+            return false;
+
+        numGroups = header->numGroups;
+        numVertices = header->numVertices;
+        vertexWidth = header->vertexWidth;
+        numIndices = header->numIndices;
+        numEdges = header->numEdges;
+        vertexComponentMask = header->vertexComponentMask;
+        groupDataSize = 6 * sizeof(uint) * numGroups;                          // Nvx2Group contains 6 unsigned int.
         vertexDataSize = numVertices * vertexWidth * sizeof(GLfloat);                   // selfexplaned.
-        indexDataSize = 3 * sizeof(int) * numIndices;                                  // numIndices is a group of 3 int.
+        indexDataSize = sizeof(int) * numIndices;                                  // numIndices is a group of 3 int.
+        groupDataPtr = header + 1;
+        vertexDataPtr = ((char*)groupDataPtr) + groupDataSize;
+        indexDataPtr = ((char*)vertexDataPtr) + vertexDataSize;
 
-        vertexDataPtr = ((uchar*)ptr) + groupDataSize;
-        indexDataPtr = ((uchar*)vertexDataPtr) + vertexDataSize;
-
-        ptr += sizeof(Nvx2Header);
-
-        Nvx2Group* g = (Nvx2Group*)ptr;
-        for (int i = 0; i < (size_t)numGroups; i++)
+        //Load vertices
+        for (int i = 0; i < 21; i++)
         {
-            PrimitiveGroup p;
-            p.numVerticies = g->numVertices;
-            p.baseIndex = g->firstTriangle * 3;
-            p.numIndicies = g->numTriangles * 3;
-            p.primitiveTopology = 4;
-            primGroups.push_back(p);
-            g++;
-        }
-
-        for (int i = 0; i < N2NumVertexComponents; i++)
-        {
-            SemanticName sem;
-            Format fmt;
-            size_t index = 0;
-
-            if (vertexComponentMask & (1 << i))
+            SemanticName vertexType;
+            Format format;
+            int sizeInBytes, isNormalized, sizeA;
+            if (vertexComponentMask & (1<<i))
             {
-                switch (1 << i)
+                switch (1<<i)
                 {
-                case N2Coord:
-                    sem = SemanticName::Position;
-                    fmt = Format::Float3;
-                    break;
-                case N2Normal:
-                    sem = SemanticName::Normal;
-                    fmt = Format::Float3;
-                    break;
-                case N2NormalB4N:
-                    sem = SemanticName::Normal;
-                    fmt = Format::Byte4N;
-                    break;
-                case N2Uv0:
-                    sem = SemanticName::TexCoord1;
-                    fmt = Format::Float2;
-                    index = 0;
-                    break;
-                case N2Uv0S2:
-                    sem = SemanticName::TexCoord1;
-                    fmt = Format::Short2;
-                    index = 0;
-                    break;
-                case N2Uv1:
-                    sem = SemanticName::TexCoord2;
-                    fmt = Format::Float2;
-                    index = 1;
-                    break;
-                case N2Uv1S2:
-                    sem = SemanticName::TexCoord2;
-                    fmt = Format::Short2;
-                    index = 1;
-                    break;
-                case N2Color:
-                    sem = SemanticName::Color;
-                    fmt = Format::Float4;
-                    break;
-                case N2ColorUB4N:
-                    sem = SemanticName::Color;
-                    fmt = Format::UByte4N;
-                    break;
-                case N2Tangent:
-                    sem = SemanticName::Tangent;
-                    fmt = Format::Float3;
-                    break;
-                case N2TangentB4N:
-                    sem = SemanticName::Tangent;
-                    fmt = Format::Byte4N;
-                    break;
-                case N2Binormal:
-                    sem = SemanticName::Binormal;
-                    fmt = Format::Float3;
-                    break;
-                case N2BinormalB4N:
-                    sem = SemanticName::Binormal;
-                    fmt = Format::Byte4N;
-                    break;
-                case N2Weights:
-                    sem = SemanticName::SkinWeights;
-                    fmt = Format::Float4;
-                    break;
-                case N2WeightsUB4N:
-                    sem = SemanticName::SkinWeights;
-                    fmt = Format::UByte4N;
-                    break;
-                case N2JIndices:
-                    sem = SemanticName::SkinJIndices;
-                    fmt = Format::Float4;
-                    break;
-                case N2JIndicesUB4:
-                    sem = SemanticName::SkinJIndices;
-                    fmt = Format::UByte4;
-                    break;
-                default:
-                    sem = SemanticName::Position;
-                    fmt = Format::Float3;
-                    break;
-                }
-                vertexComponent vertexC;
-                vertexC.name = sem;
-                vertexC.index = index;
-                vertexC.format = fmt;
+                    case N2Coord:       vertexType = SemanticName::Position;      format = Format::Float3;    sizeInBytes = 12;   isNormalized = 0; sizeA = 3; break;
+                    case N2Normal:      vertexType = SemanticName::Normal;        format = Format::Float3;    sizeInBytes = 12;   isNormalized = 0; sizeA = 3; break;
+                    case N2NormalB4N:   vertexType = SemanticName::Normal;        format = Format::Byte4N;    sizeInBytes = 4;    isNormalized = 1; sizeA = 4; break;
+                    case N2Uv0:         vertexType = SemanticName::TexCoord1;     format = Format::Float2;    sizeInBytes = 8;    isNormalized = 0; sizeA = 2; break;
+                    case N2Uv0S2:       vertexType = SemanticName::TexCoord1;     format = Format::Short2;    sizeInBytes = 4;    isNormalized = 0; sizeA = 2; break;
+                    case N2Uv1:         vertexType = SemanticName::TexCoord2;     format = Format::Float2;    sizeInBytes = 8;    isNormalized = 0; sizeA = 2; break;
+                    case N2Uv1S2:       vertexType = SemanticName::TexCoord2;     format = Format::Short2;    sizeInBytes = 4;    isNormalized = 0; sizeA = 2; break;
+                    case N2Color:       vertexType = SemanticName::Color;         format = Format::Float4;    sizeInBytes = 16;   isNormalized = 0; sizeA = 4; break;
+                    case N2ColorUB4N:   vertexType = SemanticName::Color;         format = Format::UByte4N;   sizeInBytes = 4;    isNormalized = 1; sizeA = 4; break;
+                    case N2Tangent:     vertexType = SemanticName::Tangent;       format = Format::Float3;    sizeInBytes = 12;   isNormalized = 0; sizeA = 3; break;
+                    case N2TangentB4N:  vertexType = SemanticName::Tangent;       format = Format::Byte4N;    sizeInBytes = 4;    isNormalized = 1; sizeA = 4; break;
+                    case N2Binormal:    vertexType = SemanticName::Binormal;      format = Format::Float3;    sizeInBytes = 12;   isNormalized = 0; sizeA = 3; break;
+                    case N2BinormalB4N: vertexType = SemanticName::Binormal;      format = Format::Byte4N;    sizeInBytes = 4;    isNormalized = 1; sizeA = 4; break;
+                    case N2Weights:     vertexType = SemanticName::SkinWeights;   format = Format::Float4;    sizeInBytes = 16;   isNormalized = 0; sizeA = 4; break;
+                    case N2WeightsUB4N: vertexType = SemanticName::SkinWeights;   format = Format::UByte4N;   sizeInBytes = 4;    isNormalized = 1; sizeA = 4; break;
+                    case N2JIndices:    vertexType = SemanticName::SkinJIndices;  format = Format::Float4;    sizeInBytes = 16;   isNormalized = 0; sizeA = 4; break;
+                    case N2JIndicesUB4: vertexType = SemanticName::SkinJIndices;  format = Format::UByte4;    sizeInBytes = 4;    isNormalized = 0; sizeA = 4; break;
 
-                vertexComponents.push_back(vertexC);
+                    default:
+                        break;
+                }
+                this->vertexComponents.push_back(vertexComponent(vertexType, format, sizeInBytes, isNormalized, sizeA));
             }
         }
+        return true;
     }
 
-    void draw()
+    void draw(Matrix4D viewProjection, Matrix4D modelPos, Vector4D cameraPos)
     {
-        //glUseProgram(0);
-        glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, Diffuse);
+//    glActiveTexture(GL_TEXTURE1);
+//    glBindTexture(GL_TEXTURE_2D, Normal);
+
+        glUseProgram(program);
+
+        unsigned int transformLoc = glGetUniformLocation(program, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_TRUE, viewProjection.getPointer());
+
+        unsigned int transformLoc2 = glGetUniformLocation(program, "cameraPosition");
+        //glUniform4fv(transformLoc2, 1, Vector4D(-0.06f, 1.0f, 3.0f, 1.0f).getVector());
+        glUniform4fv(transformLoc2, 1, cameraPos.getPointer());
+
+
+//    std::vector<float> transformArray;
+//    if(animationPlaying)
+//    {
+//        for (int i = 0; i < jointArray.size(); i++)
+//        {
+//            for (int j = 0; j < 16; j++)
+//            {
+//                transformArray.push_back(jointArray[i]->transform.getMatrix()[j]);
+//            }
+//        }
+//    }
+//    else
+//    {
+//        for (int i = 0; i < jointArray.size(); i++)
+//        {
+//            for (int j = 0; j < 16; j++)
+//            {
+//                transformArray.push_back(defaultArray[i]->worldPosition.getMatrix()[j]);
+//            }
+//        }
+//    }
+//
+//    unsigned int transformLoc3 = glGetUniformLocation(program, "jointTransforms");
+//    glUniformMatrix4fv(transformLoc3, jointArray.size(), GL_TRUE, &transformArray[0]);
+
+        unsigned int transformLoc4 = glGetUniformLocation(program, "modelMatrix");
+        glUniformMatrix4fv(transformLoc4, 1, GL_TRUE, modelPos.getPointer());
+
+        unsigned int transformLoc5 = glGetUniformLocation(program, "isPlaying");
+        glUniform1i(transformLoc5, false);
+
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, vertexDataSize, GL_UNSIGNED_INT, NULL);
+        glBindVertexArray(0);
+        glUseProgram(0);
     }
 
     void setupMesh()
-    {
-        generateHandels();
-        setupBuffers();
-        bindBuffers(vertexDataPtr, vertexDataSize, indexDataPtr, indexDataSize);
-        loadMeshBuffers();
-    }
-
-    void generateHandels()
-    {
+    {glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
         glGenBuffers(1, &EBO);
-
-        glGenVertexArrays(1, &VAO);
-    }
-    void setupBuffers()
-    {
-        glGenBuffers(1, &VBO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-        glGenBuffers(1, &EBO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-
-    }
-    void bindBuffers(const void* vb, unsigned int vbSize, const void* ib, unsigned int ibSize)
-    {
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vbSize, vb, GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, ibSize, ib, GL_STATIC_DRAW);
-
         glBindVertexArray(VAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertexDataSize, vertexDataPtr, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexDataSize, indexDataPtr, GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, vertexComponents[0].sizeArray, vertexComponents[0].getType(), vertexComponents[0].isNormalized, sizeof(float)* vertexWidth, NULL);
+
+        int amountOfBytes = vertexComponents[0].sizeInBytes;
+        for (int i = 1; i < vertexComponents.size(); i++)
+        {
+            glEnableVertexAttribArray(i);
+            glVertexAttribPointer(i, vertexComponents[i].sizeArray, vertexComponents[i].getType(), vertexComponents[i].isNormalized, sizeof(float)* vertexWidth, (void*)(sizeof(char)*amountOfBytes));
+            amountOfBytes += vertexComponents[i].sizeInBytes;
+        }
+        glBindVertexArray(0);
+
+        //Handels for textures
+        glGenTextures(1, &Diff);
+
+        //Get diffuse Texutre
+        glBindTexture(GL_TEXTURE_2D, Diff);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        int width, height, nrChannels;
+        unsigned char* data = stbi_load("Footman_Diffuse.tga", &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0 , GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        else
+        {
+            std::cout << "Failed to load texture" << std::endl;
+        }
+        stbi_image_free(data);
+
+        //Get Normal Texutre
+        glGenTextures(1, &Norm);
+        glBindTexture(GL_TEXTURE_2D, Norm);
+        data = stbi_load("Footman_Normal.tga", &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0 , GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        else
+        {
+            std::cout << "Failed to load texture" << std::endl;
+        }
+        stbi_image_free(data);
+
+        //Vertex Shader
+        std::ifstream file;
+        file.open("vs.shader");
+        if (file.fail()) {
+            std::cout << "Failed to load vertexShader" << std::endl;
+            return;
+        }
+        else {
+            std::stringstream tempstream;
+            tempstream << file.rdbuf();
+            std::string temp = tempstream.str();
+            vs = temp.c_str();
+
+            const GLint lengthOfVertexShader = strlen(vs);
+            vertexShader = glCreateShader(GL_VERTEX_SHADER);
+            glShaderSource(vertexShader, 1, &vs, &lengthOfVertexShader);
+            glCompileShader(vertexShader);
+
+            // ERROR LOG
+            int  success;
+            char infoLog[512];
+            glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+            if (!success)
+            {
+                glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+                std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+            }
+            file.close();
+        }
+
+        file.open("fs.shader");
+        if (file.fail()) {
+            std::cout << "Failed to load fragmentShader" << std::endl;
+            return;
+        }
+        else {
+            std::stringstream tempstream;
+            tempstream << file.rdbuf();
+            std::string temp = tempstream.str();
+            fs = temp.c_str();
+            const GLint lengthOfPixelShader = strlen(fs);
+            fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+            glShaderSource(fragmentShader, 1, &fs, &lengthOfPixelShader);
+            glCompileShader(fragmentShader);
+
+            // ERROR LOG
+            int  success;
+            char infoLog[512];
+            glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+            if (!success)
+            {
+                glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+                std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+            }
+            file.close();
+        }
+
+        program = glCreateProgram();
+        glAttachShader(program, vertexShader);
+        glAttachShader(program, fragmentShader);
+        glLinkProgram(program);
+
+        glUseProgram(program);
+        glUniform1i(glGetUniformLocation(program, "diffuseTexture"), 0);
+        glUniform1i(glGetUniformLocation(program, "normalMap"), 1);
+        glUseProgram(0);
     }
+
     void loadMeshBuffers()
     {
         int offset = 0;
@@ -314,28 +409,45 @@ public:
         glEnableVertexAttribArray(6);
         glVertexAttribPointer(6, 4, GL_UNSIGNED_BYTE, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
         glBindVertexArray(0);
-        //int offset = 0;
-        //glEnableVertexAttribArray(0);
-        //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*)0);
-        //offset += sizeof(GLfloat) * 3;
-        //glEnableVertexAttribArray(1);
-        //glVertexAttribPointer(1, 4, GL_BYTE, GL_FALSE, 10 * sizeof(GLbyte), (void*)offset);
-        //offset += sizeof(GLbyte) * 4;
-        //glEnableVertexAttribArray(2);
-        //glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
-        //offset += sizeof(GLfloat) * 2;
-        //glEnableVertexAttribArray(3);
-        //glVertexAttribPointer(3, 4, GL_BYTE, GL_FALSE, 10 * sizeof(GLbyte), (void*)offset);
-        //offset += sizeof(GLbyte) * 4;
-        //glEnableVertexAttribArray(4);
-        //glVertexAttribPointer(4, 4, GL_BYTE, GL_TRUE, 10 * sizeof(GLbyte), (void*)offset);
-        //offset += sizeof(GLbyte) * 4;
-        //glEnableVertexAttribArray(5);
-        //glVertexAttribPointer(5, 4, GL_UNSIGNED_BYTE, GL_TRUE, 10 * sizeof(GLbyte), (void*)offset);
-        //offset += sizeof(GLbyte) * 4;
-        //glEnableVertexAttribArray(6);
-        //glVertexAttribPointer(6, 4, GL_UNSIGNED_BYTE, GL_FALSE, 10 * sizeof(GLbyte), (void*)offset);
-        //glBindVertexArray(0);
+    }
+
+    void loadTextureBuffers()
+    {
+        glGenTextures(1, &Diff);
+
+        //Get diffuse Texutre
+        glBindTexture(GL_TEXTURE_2D, Diff);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        int width, height, nrChannels;
+        unsigned char* data = stbi_load("Footman_Diffuse.tga", &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0 , GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        else
+        {
+            std::cout << "Failed to load texture" << std::endl;
+        }
+        stbi_image_free(data);
+
+        //Get Normal Texutre
+        glGenTextures(1, &Norm);
+        glBindTexture(GL_TEXTURE_2D, Norm);
+        data = stbi_load("Footman_Normal.tga", &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0 , GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        else
+        {
+            std::cout << "Failed to load texture" << std::endl;
+        }
+        stbi_image_free(data);
     }
 
     void unbindBuffers()
@@ -345,11 +457,75 @@ public:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
+    void bindShaders()
+    {
+        // Vertex Shader
+        std::ifstream file;
+        file.open("vs.shader"); // CHANGE
+        if (file.fail()) {
+            std::cout << "Failed to load vertexShader" << std::endl;
+            return;
+        }
+        else {
+            std::stringstream tempstream;
+            tempstream << file.rdbuf();
+            std::string temp = tempstream.str();
+            vs = temp.c_str();
+
+            const GLint lengthOfVertexShader = strlen(vs);
+            vertexShader = glCreateShader(GL_VERTEX_SHADER);
+            glShaderSource(vertexShader, 1, &vs, &lengthOfVertexShader);
+            glCompileShader(vertexShader);
+
+            // ERROR LOG
+            int  success;
+            char infoLog[512];
+            glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+            if (!success)
+            {
+                glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+                std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+            }
+            file.close();
+        }
+
+        // Fragment Shader
+        file.open("fs.shader"); // CHANGE
+        if (file.fail()) {
+            std::cout << "Failed to load fragmentShader" << std::endl;
+            return;
+        }
+        else {
+            std::stringstream tempstream;
+            tempstream << file.rdbuf();
+            std::string temp = tempstream.str();
+            fs = temp.c_str();
+
+            const GLint lengthOfPixelShader = strlen(fs);
+            fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+            glShaderSource(fragmentShader, 1, &fs, &lengthOfPixelShader);
+            glCompileShader(fragmentShader);
+
+            // ERROR LOG
+            int  success;
+            char infoLog[512];
+            glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+            if (!success)
+            {
+                glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+                std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+            }
+            file.close();
+        }
+    }
 
     // ------------------------------------------------------------------------
 
-    GraphicsNode gNode;
+    MeshResource mesh;
+    TextureResource textrure;
+    Shader shader;
 
+    // Loader variables.
     Nvx2Header* header;
 
     vector<PrimitiveGroup> primGroups;
@@ -363,14 +539,24 @@ public:
     size_t vertexDataSize;
     size_t indexDataSize;
 
-    unsigned int numGroups;
-    unsigned int numVertices;
-    unsigned int vertexWidth;
-    unsigned int numIndices;
-    unsigned int numEdges;
-    unsigned int vertexComponentMask;
+    uint numGroups;
+    uint numVertices;
+    uint vertexWidth;
+    uint numIndices;
+    uint numEdges;
+    uint vertexComponentMask;
 
+    // Render variables.
     uint32 EBO;
     uint32 VBO;
     uint32 VAO;
+
+    uint32 Diff;
+    uint32 Norm;
+
+    const char* vs;
+    const char* fs;
+    uint32 vertexShader;
+    uint32 fragmentShader;
+    uint32 program;
 };

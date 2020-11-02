@@ -19,9 +19,9 @@ namespace Example
 	public:
 
 		/// constructor
-		ExampleApp();
+		ExampleApp(){}
 		/// destructor
-		~ExampleApp();
+		~ExampleApp(){}
 
 		/// open app
 		bool Open();
@@ -33,14 +33,21 @@ namespace Example
 		std::chrono::high_resolution_clock clock = std::chrono::high_resolution_clock();
 		using ms = std::chrono::duration<float, std::milli>;
 
-		Display::Window* window;
+        Footman soldier;
 
-		Camera camera;
+        Vector4D cameraPos = Vector4D(0.0f, 1.0f, 3.0f, 1.0f);
+        Vector4D cameraFront = Vector4D(0.0f, 0.0f, -1.0f, 1.0f);
+        Vector4D cameraUp = Vector4D(0.0f, 1.0f, 0.0f, 1.0f);
+        float cameraSpeed = 0.05f;
 
-		Footman soldier;
+        bool click = false;
+        bool firstMouse;
 
-		Matrix4D* view;
-		Matrix4D perspectiveProjection;
+        float lastX, lastY, yaw = 0.0f, pitch = 0.0f;
 
+        Matrix4D lookat;
+        Matrix4D perspectiveProjection;
+
+        Display::Window* window;
 	};
 }

@@ -39,13 +39,14 @@ public:
             }
         }
     }
-    inline void loadSkeleton(const char* filename)
+
+    inline bool loadSkeleton(const char* filename)
     {
         TiXmlDocument doc(filename);
         if (!doc.LoadFile())
         {
-            printf("Failed to load file \"%s\"\n", filename);
-            return;
+            printf("ERROR: %s %s\n", doc.ErrorDesc(), filename);
+            return false;
         }
 
         TiXmlElement *eJoint = doc.FirstChildElement("Nebula3")->FirstChildElement("Model")->FirstChildElement("CharacterNodes")->FirstChildElement("CharacterNode")->FirstChildElement("Joint");
@@ -79,6 +80,7 @@ public:
             eJoint = eJoint->NextSiblingElement("Joint");
         }
         worldSpaceConvertion();
+        return true;
     }
     inline void update(int index)
     {
