@@ -4,7 +4,6 @@
 //------------------------------------------------------------------------------
 #include "config.h"
 #include "exampleapp.h"
-
 #include <cstring>
 
 #define PI 3.14159265359
@@ -12,6 +11,15 @@
 using namespace Display;
 namespace Example
 {
+    //Perspective projection
+    const float n = 0.1f;
+    const float f = 100000.0f;
+    const float r = 0.1f;
+    const float l = -0.1f;
+    const float t = 0.1f;
+    const float b = -0.1f;
+
+
 	bool ExampleApp::Open()
 	{
 		App::Open();
@@ -90,23 +98,42 @@ namespace Example
                     cameraPos = cameraPos - (cameraFront.crossProduct(cameraUp)).normalize() * cameraSpeed;
                 }
                 // Animations.
-				if (key == GLFW_KEY_1)
-					soldier.setAnimationClip(0);
-				if (key == GLFW_KEY_2)
-					soldier.setAnimationClip(1);
-				if (key == GLFW_KEY_3)
-					soldier.setAnimationClip(2);
-				if (key == GLFW_KEY_4)
-					soldier.setAnimationClip(3);
-				if (key == GLFW_KEY_5)
-					soldier.setAnimationClip(4);
-				if (key == GLFW_KEY_6)
-					soldier.setAnimationClip(5);
-				if (key == GLFW_KEY_7)
-					soldier.setAnimationClip(6);
-				if (key == GLFW_KEY_8)
-					soldier.setAnimationClip(7);
-
+				if (key == GLFW_KEY_0){
+                    start = clock.now();
+                    soldier.setAnimationClip(-1);
+                }
+				if (key == GLFW_KEY_1){
+                    start = clock.now();
+                    soldier.setAnimationClip(0);
+                }
+				if (key == GLFW_KEY_2){
+                    start = clock.now();
+                    soldier.setAnimationClip(1);
+                }
+				if (key == GLFW_KEY_3){
+                    start = clock.now();
+                    soldier.setAnimationClip(2);
+                }
+				if (key == GLFW_KEY_4){
+                    start = clock.now();
+                    soldier.setAnimationClip(3);
+                }
+				if (key == GLFW_KEY_5){
+                    start = clock.now();
+                    soldier.setAnimationClip(4);
+                }
+				if (key == GLFW_KEY_6){
+                    start = clock.now();
+                    soldier.setAnimationClip(5);
+                }
+				if (key == GLFW_KEY_7){
+                    start = clock.now();
+                    soldier.setAnimationClip(6);
+                }
+				if (key == GLFW_KEY_8) {
+                    start = clock.now();
+                    soldier.setAnimationClip(7);
+                }
                 // Drawstates.
 				if (key == GLFW_KEY_T && action == GLFW_PRESS)
 					soldier.ds();
@@ -114,9 +141,10 @@ namespace Example
 					soldier.db();
 				if (key == GLFW_KEY_M && action == GLFW_PRESS)
 					soldier.dm();
-				if (key == GLFW_KEY_P && action == GLFW_PRESS)
-					soldier.pa();
-
+				if (key == GLFW_KEY_P && action == GLFW_PRESS) {
+				    start = clock.now();
+                    soldier.pa();
+                }
 			});
 
 		if (this->window->Open())
@@ -124,13 +152,6 @@ namespace Example
 			// set clear color to gray
 			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glEnable(GL_DEPTH_TEST);
-            //Perspective projection
-            const float n = 0.1f;
-            const float f = 100000.0f;
-            const float r = 0.1f;
-            const float l = -0.1f;
-            const float t = 0.1f;
-            const float b = -0.1f;
 
             perspectiveProjection = Matrix4D::perspective(n, f, r, l, t, b);
 
@@ -149,9 +170,6 @@ namespace Example
 	*/
 	void ExampleApp::Run()
 	{
-		auto start = clock.now();
-        Vector4D pos = Vector4D(0,0,-4,1);
-
 		while (this->window->IsOpen())
 		{
 			this->window->Update();
@@ -159,8 +177,9 @@ namespace Example
             glClear(GL_DEPTH_BUFFER_BIT);
 
             lookat = Matrix4D::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-
-			soldier.drawModel(perspectiveProjection*lookat, (Matrix4D::getPositionMatrix(pos)), cameraPos);
+            soldier.animateSkeleton(/*timestep*/std::chrono::duration_cast<ms>(clock.now() - start).count());
+            soldier.draw(perspectiveProjection*lookat);
+			soldier.drawModel(perspectiveProjection*lookat, cameraPos);
 
 			this->window->SwapBuffers();
 		}

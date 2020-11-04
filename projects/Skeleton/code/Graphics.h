@@ -215,7 +215,6 @@ public:
         glUniformMatrix4fv(transformLoc, 1, GL_TRUE, viewProjection.getPointer());
 
         unsigned int transformLoc2 = glGetUniformLocation(program, "cameraPosition");
-        //glUniform4fv(transformLoc2, 1, Vector4D(-0.06f, 1.0f, 3.0f, 1.0f).getVector());
         glUniform4fv(transformLoc2, 1, cameraPos.getPointer());
 
 
@@ -520,10 +519,6 @@ public:
     }
 
     // ------------------------------------------------------------------------
-
-    MeshResource mesh;
-    TextureResource textrure;
-    Shader shader;
 
     // Loader variables.
     Nvx2Header* header;

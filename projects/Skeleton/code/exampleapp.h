@@ -10,7 +10,7 @@
 #include "render/window.h"
 #include "Camera.h"
 #include "Footman.h"
-#include <chrono>
+
 
 namespace Example
 {
@@ -30,10 +30,7 @@ namespace Example
 
 	private:
 
-		std::chrono::high_resolution_clock clock = std::chrono::high_resolution_clock();
-		using ms = std::chrono::duration<float, std::milli>;
-
-        Footman soldier;
+        Footman soldier = Footman(Vector4D(0.0f,0.0f,0.0f,1.0f));
 
         Vector4D cameraPos = Vector4D(0.0f, 1.0f, 3.0f, 1.0f);
         Vector4D cameraFront = Vector4D(0.0f, 0.0f, -1.0f, 1.0f);
@@ -49,5 +46,9 @@ namespace Example
         Matrix4D perspectiveProjection;
 
         Display::Window* window;
+
+        chrono::high_resolution_clock clock = chrono::high_resolution_clock();
+        using ms = chrono::duration<float, milli>;
+        chrono::time_point<chrono::high_resolution_clock> start;
 	};
 }

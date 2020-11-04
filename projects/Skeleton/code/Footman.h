@@ -3,14 +3,18 @@
 #include "Animation.h"
 #include "Graphics.h"
 #include "Cubesphere.h"
+#include <chrono>
 
 #define PI 3.14159265
 
 class Footman
 {
 public:
-	Footman() {};
-	~Footman() {};
+	Footman(Vector4D pos)
+	{
+	    positionMatrix = Matrix4D::getPositionMatrix(pos);
+	}
+	~Footman() {}
 
 	void load()
 	{
@@ -25,12 +29,11 @@ public:
         graphics.setup();
     }
 
-	void update(float runtime)
+	void animateSkeleton(float runtime)
 	{
-		float animationSpeed = runtime / animation.clips[clipToPlay].keyDuration;
-
-		if (playAnimation)
-		{
+	    if (playAnimation && clipToPlay != -1)
+        {
+		    float animationSpeed = runtime / animation.clips[clipToPlay].keyDuration;
 			for (int i = 0; i < skeleton.joints->size(); ++i)
 			{
 				//Load animation data for one key in a clip
@@ -45,14 +48,25 @@ public:
 				skeleton.joints->at(i).localTransform = res;
 			}
 		}
+	    else
+        {
+
+        }
 		skeleton.update(0);
 	}
-	void draw()
-	{
+	void draw(Matrix4D viewMatrix)
+    {
+	    Matrix4D mat = Matrix4D::transpose(viewMatrix);
 		for (int i = 0; i < skeleton.joints->size(); ++i)
 		{
-			Joint joint = skeleton.joints->at(i);
+            glMatrixMode(GL_MODELVIEW);
+            glLoadMatrixf((GLfloat*)&mat);
+
+            Joint joint = skeleton.joints->at(i);
 			Vector4D a = joint.worldspaceTransform.getPositionVector();
+
+			Vector4D pos = positionMatrix.getPositionVec();
+
 			glBegin(GL_LINES);
 			if (drawSkeleton)
 			{
@@ -60,8 +74,8 @@ public:
 				{
 					glColor3f(255, 0, 0);
 					Vector4D b = skeleton.joints->at(joint.parent).worldspaceTransform.getPositionVector();
-					glVertex3f(a[0], a[1], a[2]);
-					glVertex3f(b[0], b[1], b[2]);
+					glVertex3f(pos[0]+a[0], pos[1]+a[1], pos[2]+a[2]);
+					glVertex3f(pos[0]+b[0], pos[1]+b[1], pos[2]+b[2]);
 				}
 			}
 			if (drawBalls)
@@ -84,27 +98,21 @@ public:
 						float theta = U * (PI * 2);
 
 						// Calc The Vertex Positions
-						float x = a[0] + (cosf(theta) * sinf(phi) * radius);
-						float y = a[1] + (cosf(phi) * radius);
-						float z = a[2] + (sinf(theta) * sinf(phi) * radius);
+						float x = pos[0]+a[0] + (cosf(theta) * sinf(phi) * radius);
+						float y = pos[1]+a[1] + (cosf(phi) * radius);
+						float z = pos[2]+a[2] + (sinf(theta) * sinf(phi) * radius);
 						glVertex3f(x, y, z);
 					}
 				}
 			}
 			glEnd();
 		}
-//		if (drawMesh)
-//		{
-//			graphics.setupMesh();
-//			graphics.draw();
-//			graphics.unbindBuffers();
-//		}
 	}
-	void drawModel(Matrix4D view, Matrix4D modelPos, Vector4D camerapos)
+	void drawModel(Matrix4D viewMatrix, Vector4D camerapos)
     {
 	    if (drawMesh)
 	    {
-            graphics.draw(view, modelPos, camerapos);
+            graphics.draw(viewMatrix, positionMatrix, camerapos);
         }
     }
 
@@ -135,11 +143,12 @@ private:
 	Animation animation;
 	Graphics graphics;
 
-	unsigned int clipToPlay = 0;
+	Matrix4D positionMatrix;
+
+	unsigned int clipToPlay = -1;
 
 	bool drawSkeleton = true;
 	bool drawBalls = true;
-	bool drawMesh = false;
+	bool drawMesh = true;
 	bool playAnimation = true;
-
 };
