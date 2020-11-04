@@ -544,9 +544,9 @@ public:
 		Vector4D s = Vector4D::normalize3(Vector4D::cross(f, u));
 		u = Vector4D::cross(s, f);
 
-		float temp[] = { s[0],  s[1],  s[2], -(Vector4D::dot(s, position)),
-						 u[0],  u[1],  u[2], -(Vector4D::dot(u, position)),
-						-f[0], -f[1], -f[2],   Vector4D::dot(f, position),
+		float temp[] = { s[0],  s[1],  s[2], -(Vector4D::dot3(s, position)),
+						 u[0],  u[1],  u[2], -(Vector4D::dot3(u, position)),
+						-f[0], -f[1], -f[2],   Vector4D::dot3(f, position),
 						    0,     0,     0,    1 };
 		return Matrix4D(temp);
 	}

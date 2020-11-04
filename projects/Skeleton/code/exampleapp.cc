@@ -127,17 +127,12 @@ namespace Example
             //Perspective projection
             const float n = 0.1f;
             const float f = 100000.0f;
-            const float l = -0.1f;
             const float r = 0.1f;
+            const float l = -0.1f;
             const float t = 0.1f;
             const float b = -0.1f;
 
-            perspectiveProjection = Matrix4D(
-                    (2 * n) / (r - l), 0, ((r + l) / (r - l)), 0,
-                    0, (2 * n) / (t - b), ((t + b) / (t - b)), 0,
-                    0, 0, -((f + n) / (f - n)), -((2 * f*n) / (f - n)),
-                    0, 0, -1, 0
-            );
+            perspectiveProjection = Matrix4D::perspective(n, f, r, l, t, b);
 
 			soldier.load();
 			soldier.loadmesh();

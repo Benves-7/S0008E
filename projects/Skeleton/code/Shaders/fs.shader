@@ -1,12 +1,9 @@
 #version 430
 in vec2 TexCoord;
 in vec4 OutNormal;
-//in vec3 Pos;
 in vec4 Tangent;
 in vec4 Binormal;
 
-//in vec4 LightPosition;
-//in vec4 LightColor;
 in vec4 CameraPosition;
 in mat3 TBN;
 in vec3 Pos;
@@ -20,7 +17,6 @@ void main()
 {
     vec4 LightPosition = vec4(0, 3, 5, 1);
     vec4 LightColor = vec4(1.0, 1.0, 1.0, 1.0);
-	//vec3 Normal = OutNormal.rgb;
 	vec3 Normal = texture(normalMap, TexCoord).rgb;
     Normal = normalize(Normal * 2.0 - 1.0);
     Normal = normalize(TBN * Normal);
