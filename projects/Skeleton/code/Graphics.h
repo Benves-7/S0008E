@@ -202,12 +202,12 @@ public:
         return true;
     }
 
-    void draw(Matrix4D viewProjection, Matrix4D modelPos, Vector4D cameraPos)
+    void draw(Matrix4D viewProjection, Matrix4D modelPos, Vector4D cameraPos, bool animation)
     {
-//    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_2D, Diffuse);
-//    glActiveTexture(GL_TEXTURE1);
-//    glBindTexture(GL_TEXTURE_2D, Normal);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, Diff);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, Norm);
 
         glUseProgram(program);
 
@@ -217,37 +217,25 @@ public:
         unsigned int transformLoc2 = glGetUniformLocation(program, "cameraPosition");
         glUniform4fv(transformLoc2, 1, cameraPos.getPointer());
 
+        std::vector<float> transformArray;
 
-//    std::vector<float> transformArray;
-//    if(animationPlaying)
-//    {
-//        for (int i = 0; i < jointArray.size(); i++)
-//        {
-//            for (int j = 0; j < 16; j++)
-//            {
-//                transformArray.push_back(jointArray[i]->transform.getMatrix()[j]);
-//            }
-//        }
-//    }
-//    else
-//    {
-//        for (int i = 0; i < jointArray.size(); i++)
-//        {
-//            for (int j = 0; j < 16; j++)
-//            {
-//                transformArray.push_back(defaultArray[i]->worldPosition.getMatrix()[j]);
-//            }
-//        }
-//    }
-//
-//    unsigned int transformLoc3 = glGetUniformLocation(program, "jointTransforms");
-//    glUniformMatrix4fv(transformLoc3, jointArray.size(), GL_TRUE, &transformArray[0]);
+        for (int i = 0; i < jointsTransform.size(); i++)
+        {
+            for (int j = 0; j < 16; j++) {
+                transformArray.push_back(jointsTransform[i].getPointer()[j]);
+            }
+        }
+        int t = jointsTransform.size();
+        int s = transformArray.size()/16;
+
+        unsigned int transformLoc3 = glGetUniformLocation(program, "jointTransforms");
+        glUniformMatrix4fv(transformLoc3, jointsTransform.size(), GL_TRUE, &transformArray[0]);
 
         unsigned int transformLoc4 = glGetUniformLocation(program, "modelMatrix");
         glUniformMatrix4fv(transformLoc4, 1, GL_TRUE, modelPos.getPointer());
 
         unsigned int transformLoc5 = glGetUniformLocation(program, "isPlaying");
-        glUniform1i(transformLoc5, false);
+        glUniform1i(transformLoc5, animation);
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, vertexDataSize, GL_UNSIGNED_INT, NULL);
@@ -554,4 +542,6 @@ public:
     uint32 vertexShader;
     uint32 fragmentShader;
     uint32 program;
+
+    vector<Matrix4D> jointsTransform;
 };

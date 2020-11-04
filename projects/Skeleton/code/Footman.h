@@ -29,10 +29,18 @@ public:
         graphics.setup();
     }
 
+
+    void update(float runtime)
+    {
+	    animateSkeleton(runtime);
+        graphics.jointsTransform.clear();
+	    updateMesh(0);
+    }
 	void animateSkeleton(float runtime)
 	{
 	    if (playAnimation && clipToPlay != -1)
         {
+	        graphics.jointsTransform.clear();
 		    float animationSpeed = runtime / animation.clips[clipToPlay].keyDuration;
 			for (int i = 0; i < skeleton.joints->size(); ++i)
 			{
@@ -48,12 +56,21 @@ public:
 				skeleton.joints->at(i).localTransform = res;
 			}
 		}
-	    else
-        {
-
-        }
 		skeleton.update(0);
 	}
+	void updateMesh(int index)
+    {
+	    Joint joint = skeleton.joints->at(index);
+
+	    if (joint.parent == -1)
+            graphics.jointsTransform.push_back(joint.localTransform);
+	    else
+	        graphics.jointsTransform.push_back(skeleton.joints->at(joint.parent).worldspaceTransform * joint.localTransform);
+        for (int i = 0; i < joint.children.size(); ++i) {
+            updateMesh(joint.children.at(i));
+        }
+    }
+
 	void draw(Matrix4D viewMatrix)
     {
 	    Matrix4D mat = Matrix4D::transpose(viewMatrix);
@@ -112,7 +129,7 @@ public:
     {
 	    if (drawMesh)
 	    {
-            graphics.draw(viewMatrix, positionMatrix, camerapos);
+            graphics.draw(viewMatrix, positionMatrix, camerapos, playAnimation);
         }
     }
 

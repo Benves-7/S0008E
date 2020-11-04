@@ -177,7 +177,7 @@ namespace Example
             glClear(GL_DEPTH_BUFFER_BIT);
 
             lookat = Matrix4D::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-            soldier.animateSkeleton(/*timestep*/std::chrono::duration_cast<ms>(clock.now() - start).count());
+            soldier.update(/*timestep*/std::chrono::duration_cast<ms>(clock.now() - start).count());
             soldier.draw(perspectiveProjection*lookat);
 			soldier.drawModel(perspectiveProjection*lookat, cameraPos);
 
