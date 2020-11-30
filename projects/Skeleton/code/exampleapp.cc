@@ -18,8 +18,7 @@ namespace Example
     const float l = -0.1f;
     const float t = 0.1f;
     const float b = -0.1f;
-
-
+    
 	bool ExampleApp::Open()
 	{
 		App::Open();
