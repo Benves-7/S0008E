@@ -157,6 +157,7 @@ namespace Example
             // Try to load the soldier.
             if (!soldier.load())
 			    return false;
+
 			return true;
 		}
 		return false;
