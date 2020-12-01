@@ -45,6 +45,7 @@ namespace Example
         Matrix4D lookat;
         Matrix4D perspectiveProjection;
 
+        bool shutdown = false;
         Display::Window* window;
 
         chrono::high_resolution_clock clock = chrono::high_resolution_clock();

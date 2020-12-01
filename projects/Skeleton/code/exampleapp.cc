@@ -11,7 +11,7 @@
 using namespace Display;
 namespace Example
 {
-    //Perspective projection
+    // Perspective projection variables.
     const float n = 0.1f;
     const float f = 100000.0f;
     const float r = 0.1f;
@@ -82,7 +82,7 @@ namespace Example
 		window->SetKeyPressFunction([this](int32 key, int32 i, int32 action, int32 modifier)
 			{
                 if (key == GLFW_KEY_ESCAPE) {
-                    this->window->Close();
+                    shutdown = true;
                 }
                 if (key == GLFW_KEY_W){
                     cameraPos = cameraPos + (cameraFront * cameraSpeed);
@@ -148,21 +148,19 @@ namespace Example
 
 		if (this->window->Open())
 		{
-			// set clear color to gray
+			// Set clear color to gray.
 			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glEnable(GL_DEPTH_TEST);
-
+            // Create the perspective projection matrix.
             perspectiveProjection = Matrix4D::perspective(n, f, r, l, t, b);
 
-			soldier.load();
-			soldier.loadmesh();
-
+            // Try to load the soldier.
+            if (!soldier.load())
+			    return false;
 			return true;
 		}
 		return false;
 	}
-
-
 
 	//------------------------------------------------------------------------------
 	/**
@@ -171,16 +169,26 @@ namespace Example
 	{
 		while (this->window->IsOpen())
 		{
+		    // Update window.
 			this->window->Update();
             glClear(GL_COLOR_BUFFER_BIT);
             glClear(GL_DEPTH_BUFFER_BIT);
 
+            // Update the lookAt matrix.
             lookat = Matrix4D::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-            soldier.update(/*timestep*/std::chrono::duration_cast<ms>(clock.now() - start).count());
-            soldier.draw(perspectiveProjection*lookat);
-			soldier.drawModel(perspectiveProjection*lookat, cameraPos);
 
+            // Update the soldier.
+            soldier.update(/*timestep*/std::chrono::duration_cast<ms>(clock.now() - start).count());
+
+            // Draw the soldier.
+            soldier.draw(perspectiveProjection*lookat, cameraPos);
+
+			// Swap the frame buffers.
 			this->window->SwapBuffers();
+
+			// Check if the esc key has been pressed during the last frame.
+			if (shutdown)
+			    this->window->Close();
 		}
 	}
 

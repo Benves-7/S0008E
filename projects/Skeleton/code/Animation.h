@@ -160,6 +160,8 @@ public:
             // load the blob of data that contains the keyframes
             memcpy(keyBuffer, ptr, header->numKeys * sizeof(Vector4D));
         }
+
+        return true;
     }
 
     Nax3Header* header;

@@ -126,19 +126,33 @@ public:
     Graphics() {}
     ~Graphics() {}
 
-    void setup()
+    bool setup()
     {
-        loadMesh("Unit_Footman.nvx2");
-        setupMesh();
-    }
-
-    bool loadMesh(char* fileName)
-    {
-        std::ifstream file;
-        file.open(fileName, std::ifstream::in | std::ifstream::binary);
-        if (!file)
+        // Try to load mesh.
+        if (!loadMesh("Unit_Footman.nvx2"))
             return false;
 
+        // Setup the mesh variables.
+        if (!setupMesh())
+            return false;
+
+        return true;
+    }
+
+    bool loadMesh(char* filename)
+    {
+        // Open file by filename.
+        std::ifstream file;
+        file.open(filename, std::ifstream::in | std::ifstream::binary);
+
+        // Check if file could open.
+        if (!file)
+        {
+            printf("ERROR: Failed to open file %s\n", filename);
+            return false;
+        }
+
+        // Setup pointers.
         file.seekg(0, file.end);
         unsigned int length = file.tellg();
         file.seekg(0, file.beg);
@@ -146,11 +160,15 @@ public:
         file.read(ptr, length);
         file.close();
 
+        // Set header.
         header = (Nvx2Header*)ptr;
-        header->numIndices *= 3;
 
+        // Check header to see that magic number is a match (correction check).
         if(header->magic != NAX2_MAGICNUMBER)
             return false;
+
+        // EXTRACT info (magic)
+        header->numIndices *= 3;
 
         numGroups = header->numGroups;
         numVertices = header->numVertices;
@@ -158,9 +176,9 @@ public:
         numIndices = header->numIndices;
         numEdges = header->numEdges;
         vertexComponentMask = header->vertexComponentMask;
-        groupDataSize = 6 * sizeof(uint) * numGroups;                          // Nvx2Group contains 6 unsigned int.
-        vertexDataSize = numVertices * vertexWidth * sizeof(GLfloat);                   // selfexplaned.
-        indexDataSize = sizeof(int) * numIndices;                                  // numIndices is a group of 3 int.
+        groupDataSize = 6 * sizeof(uint) * numGroups;
+        vertexDataSize = numVertices * vertexWidth * sizeof(GLfloat);
+        indexDataSize = sizeof(int) * numIndices;
         groupDataPtr = header + 1;
         vertexDataPtr = ((char*)groupDataPtr) + groupDataSize;
         indexDataPtr = ((char*)vertexDataPtr) + vertexDataSize;
@@ -202,49 +220,9 @@ public:
         return true;
     }
 
-    void draw(Matrix4D viewProjection, Matrix4D modelPos, Vector4D cameraPos, bool animation)
+    bool setupMesh()
     {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, Diff);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, Norm);
-
-        glUseProgram(program);
-
-        unsigned int transformLoc = glGetUniformLocation(program, "transform");
-        glUniformMatrix4fv(transformLoc, 1, GL_TRUE, viewProjection.getPointer());
-
-        unsigned int transformLoc2 = glGetUniformLocation(program, "cameraPosition");
-        glUniform4fv(transformLoc2, 1, cameraPos.getPointer());
-
-        std::vector<float> transformArray;
-
-        for (int i = 0; i < jointsTransform.size(); i++)
-        {
-            for (int j = 0; j < 16; j++) {
-                transformArray.push_back(jointsTransform[i].getPointer()[j]);
-            }
-        }
-        int t = jointsTransform.size();
-        int s = transformArray.size()/16;
-
-        unsigned int transformLoc3 = glGetUniformLocation(program, "jointTransforms");
-        glUniformMatrix4fv(transformLoc3, jointsTransform.size(), GL_TRUE, &transformArray[0]);
-
-        unsigned int transformLoc4 = glGetUniformLocation(program, "modelMatrix");
-        glUniformMatrix4fv(transformLoc4, 1, GL_TRUE, modelPos.getPointer());
-
-        unsigned int transformLoc5 = glGetUniformLocation(program, "isPlaying");
-        glUniform1i(transformLoc5, animation);
-
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, vertexDataSize, GL_UNSIGNED_INT, NULL);
-        glBindVertexArray(0);
-        glUseProgram(0);
-    }
-
-    void setupMesh()
-    {glGenVertexArrays(1, &VAO);
+        glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
         glGenBuffers(1, &EBO);
         glBindVertexArray(VAO);
@@ -267,10 +245,10 @@ public:
         }
         glBindVertexArray(0);
 
-        //Handels for textures
+        // Handles for textures
         glGenTextures(1, &Diff);
 
-        //Get diffuse Texutre
+        // Get diffuse texture
         glBindTexture(GL_TEXTURE_2D, Diff);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -285,11 +263,12 @@ public:
         }
         else
         {
-            std::cout << "Failed to load texture" << std::endl;
+            std::cout << "Failed to load texture (diffuse)" << std::endl;
+            return false;
         }
         stbi_image_free(data);
 
-        //Get Normal Texutre
+        // Get normal texture
         glGenTextures(1, &Norm);
         glBindTexture(GL_TEXTURE_2D, Norm);
         data = stbi_load("Footman_Normal.tga", &width, &height, &nrChannels, 0);
@@ -300,16 +279,17 @@ public:
         }
         else
         {
-            std::cout << "Failed to load texture" << std::endl;
+            std::cout << "Failed to load texture (normal)" << std::endl;
+            return false;
         }
         stbi_image_free(data);
 
-        //Vertex Shader
+        // Vertex shader
         std::ifstream file;
         file.open("vs.shader");
         if (file.fail()) {
             std::cout << "Failed to load vertexShader" << std::endl;
-            return;
+            return false;
         }
         else {
             std::stringstream tempstream;
@@ -334,10 +314,11 @@ public:
             file.close();
         }
 
+        // Fragment shader
         file.open("fs.shader");
         if (file.fail()) {
             std::cout << "Failed to load fragmentShader" << std::endl;
-            return;
+            return false;
         }
         else {
             std::stringstream tempstream;
@@ -361,6 +342,7 @@ public:
             file.close();
         }
 
+        // Program setup.
         program = glCreateProgram();
         glAttachShader(program, vertexShader);
         glAttachShader(program, fragmentShader);
@@ -370,140 +352,47 @@ public:
         glUniform1i(glGetUniformLocation(program, "diffuseTexture"), 0);
         glUniform1i(glGetUniformLocation(program, "normalMap"), 1);
         glUseProgram(0);
+
+        return true;
     }
 
-    void loadMeshBuffers()
+    void draw(Matrix4D viewProjection, Matrix4D modelPos, Vector4D cameraPos, bool animation)
     {
-        int offset = 0;
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*)0);
-        offset += sizeof(GLfloat) * 3;
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 4, GL_BYTE, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
-        offset += sizeof(GLbyte) * 4;
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
-        offset += sizeof(GLfloat) * 2;
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_BYTE, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
-        offset += sizeof(GLbyte) * 4;
-        glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_BYTE, GL_TRUE, 10 * sizeof(GLfloat), (void*)offset);
-        offset += sizeof(GLbyte) * 4;
-        glEnableVertexAttribArray(5);
-        glVertexAttribPointer(5, 4, GL_UNSIGNED_BYTE, GL_TRUE, 10 * sizeof(GLfloat), (void*)offset);
-        offset += sizeof(GLbyte) * 4;
-        glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, 4, GL_UNSIGNED_BYTE, GL_FALSE, 10 * sizeof(GLfloat), (void*)offset);
-        glBindVertexArray(0);
-    }
-
-    void loadTextureBuffers()
-    {
-        glGenTextures(1, &Diff);
-
-        //Get diffuse Texutre
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, Diff);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        int width, height, nrChannels;
-        unsigned char* data = stbi_load("Footman_Diffuse.tga", &width, &height, &nrChannels, 0);
-        if (data)
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0 , GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
-        }
-        else
-        {
-            std::cout << "Failed to load texture" << std::endl;
-        }
-        stbi_image_free(data);
-
-        //Get Normal Texutre
-        glGenTextures(1, &Norm);
+        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, Norm);
-        data = stbi_load("Footman_Normal.tga", &width, &height, &nrChannels, 0);
-        if (data)
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0 , GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
-        }
-        else
-        {
-            std::cout << "Failed to load texture" << std::endl;
-        }
-        stbi_image_free(data);
-    }
 
-    void unbindBuffers()
-    {
+        glUseProgram(program);
+
+        unsigned int transformLoc = glGetUniformLocation(program, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_TRUE, viewProjection.getPointer());
+
+        unsigned int transformLoc2 = glGetUniformLocation(program, "cameraPosition");
+        glUniform4fv(transformLoc2, 1, cameraPos.getPointer());
+
+//        std::vector<float> transformArray;
+//        for (int i = 0; i < joints.size(); ++i)
+//        {
+//            for (int j = 0; j < 16; ++j)
+//            {
+//                transformArray.push_back(joints[i].transform.getPointer()[j]);
+//            }
+//        }
+//
+//        unsigned int transformLoc3 = glGetUniformLocation(program, "jointTransforms");
+//        glUniformMatrix4fv(transformLoc3, joints.size(), GL_TRUE, &transformArray[0]);
+
+        unsigned int transformLoc4 = glGetUniformLocation(program, "modelMatrix");
+        glUniformMatrix4fv(transformLoc4, 1, GL_TRUE, modelPos.getPointer());
+
+        unsigned int transformLoc5 = glGetUniformLocation(program, "isPlaying");
+        glUniform1i(transformLoc5, false);
+
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, vertexDataSize, GL_UNSIGNED_INT, NULL);
         glBindVertexArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    }
-
-    void bindShaders()
-    {
-        // Vertex Shader
-        std::ifstream file;
-        file.open("vs.shader"); // CHANGE
-        if (file.fail()) {
-            std::cout << "Failed to load vertexShader" << std::endl;
-            return;
-        }
-        else {
-            std::stringstream tempstream;
-            tempstream << file.rdbuf();
-            std::string temp = tempstream.str();
-            vs = temp.c_str();
-
-            const GLint lengthOfVertexShader = strlen(vs);
-            vertexShader = glCreateShader(GL_VERTEX_SHADER);
-            glShaderSource(vertexShader, 1, &vs, &lengthOfVertexShader);
-            glCompileShader(vertexShader);
-
-            // ERROR LOG
-            int  success;
-            char infoLog[512];
-            glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-            if (!success)
-            {
-                glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-                std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-            }
-            file.close();
-        }
-
-        // Fragment Shader
-        file.open("fs.shader"); // CHANGE
-        if (file.fail()) {
-            std::cout << "Failed to load fragmentShader" << std::endl;
-            return;
-        }
-        else {
-            std::stringstream tempstream;
-            tempstream << file.rdbuf();
-            std::string temp = tempstream.str();
-            fs = temp.c_str();
-
-            const GLint lengthOfPixelShader = strlen(fs);
-            fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-            glShaderSource(fragmentShader, 1, &fs, &lengthOfPixelShader);
-            glCompileShader(fragmentShader);
-
-            // ERROR LOG
-            int  success;
-            char infoLog[512];
-            glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-            if (!success)
-            {
-                glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-                std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-            }
-            file.close();
-        }
+        glUseProgram(0);
     }
 
     // ------------------------------------------------------------------------

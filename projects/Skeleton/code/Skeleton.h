@@ -7,6 +7,7 @@
 
 #include "tinyxml.h"
 #include <vector>
+#include <sstream>
 
 #ifndef XMLCheckResult
 #define XMLCheckResult(a_eResult) if (a_eResult != XML_SUCCESS) { printf("Error: %i\n", a_eResult); }
@@ -19,9 +20,9 @@ struct Joint
     string name;
     int index, parent;
     vector<int> children;
-    Matrix4D localTransform, worldspaceTransform;
+    bool isRoot = false;
 
-    //inverseBindPose? 
+    Matrix4D localTransform, worldspaceTransform, inversWorldspaceTransform;
 };
 
 class Skeleton
@@ -29,39 +30,70 @@ class Skeleton
 public:
     Skeleton() {}
     ~Skeleton() {}
-    inline void worldSpaceConvertion()
+
+    inline void worldSpaceConvertion(int index = 0)
     {
-        for (int i = 0; i < joints->size(); i++)
+        // Get the joint at index.
+        Joint joint = joints.at(index);
+
+        // If joint is not root
+        // WorldspaceTransform is set as parents worldspaceTransform * localTransform.
+        // InverseWorldspaceTransform is set as the inverse of worldspaceTransform.
+        if (!joint.isRoot)
         {
-            if (joints->at(i).parent!=-1)
-            {
-                joints->at(i).worldspaceTransform = joints->at(joints->at(i).parent).worldspaceTransform * joints->at(i).localTransform;
-            }
+            joint.worldspaceTransform = joints.at(joint.parent).worldspaceTransform * joint.localTransform;
+            joint.inversWorldspaceTransform = Matrix4D::inverse(joint.worldspaceTransform);
+        }
+        else
+        {
+            joint.worldspaceTransform = Matrix4D() * joint.localTransform;
+        }
+
+        // Step through the children and preform the worldspaceconversion.
+        for (int i = 0; i < joint.children.size(); ++i)
+        {
+            worldSpaceConvertion(joint.children.at(i));
         }
     }
 
     inline bool loadSkeleton(const char* filename)
     {
+        // Open file by filename.
         TiXmlDocument doc(filename);
+
+        // If file can't be found.
         if (!doc.LoadFile())
         {
             printf("ERROR: %s %s\n", doc.ErrorDesc(), filename);
             return false;
         }
 
-        TiXmlElement *eJoint = doc.FirstChildElement("Nebula3")->FirstChildElement("Model")->FirstChildElement("CharacterNodes")->FirstChildElement("CharacterNode")->FirstChildElement("Joint");
+        // Create two TiXmlElements for easier access.
+        TiXmlElement *eJoint = doc.FirstChildElement("Nebula3")->FirstChildElement("Model")->FirstChildElement(
+                "CharacterNodes")->FirstChildElement("CharacterNode")->FirstChildElement("Joint");
+        TiXmlElement *eOrder = doc.FirstChildElement("Nebula3")->FirstChildElement("Model")->FirstChildElement(
+                "Skins")->FirstChildElement("Skin")->FirstChildElement("Fragment")->FirstChildElement("Joints");
+
+        // Step through all joint elements.
         while (eJoint)
         {
+            // Create a joint and add the name, index, and parent index.
             Joint joint;
             joint.name = eJoint->Attribute("name");
             joint.index = atoi(eJoint->Attribute("index"));
             joint.parent = atoi(eJoint->Attribute("parent"));
 
+            // Check if this joint is not the rootJoint. add this joint to parent's children vector.
             if (joint.parent != -1)
             {
-                joints->at(joint.parent).children.push_back(joint.index);
+                joints.at(joint.parent).children.push_back(joint.index);
+            }
+            else
+            {
+                joint.isRoot = true;
             }
 
+            // Get all off the attributes from the TiXmlElement and insert it in the joint.
             float temp[4];
             sscanf(eJoint->Attribute("position"), "%f,%f,%f,%f", &temp[0], &temp[1], &temp[2], &temp[3]);
             Vector4D position(temp);
@@ -69,40 +101,62 @@ public:
             sscanf(eJoint->Attribute("rotation"), "%f,%f,%f,%f", &temp[0], &temp[1], &temp[2], &temp[3]);
             Vector4D rotation(temp);
             Matrix4D r = Matrix4D::getRotationFromQuaternian(rotation);
-            sscanf(eJoint->Attribute("scale"),    "%f,%f,%f,%f", &temp[0], &temp[1], &temp[2], &temp[3]);
+            sscanf(eJoint->Attribute("scale"), "%f,%f,%f,%f", &temp[0], &temp[1], &temp[2], &temp[3]);
             Vector4D scale(temp);
             Matrix4D s = Matrix4D::getScaleMatrix(scale);
 
-            joint.worldspaceTransform = p * r * s;
-            joint.localTransform = joint.worldspaceTransform;
+            // The worldspaceTransform is set to the position * rotation * scale. And the localTransform is set to the same.
+            joint.localTransform = p * r * s;
+            joint.worldspaceTransform = joint.localTransform;
 
-            joints->push_back(joint);
+            // Then add the joint to the skeletons joint vector.
+            joints.push_back(joint);
+
+            // move the TiXmlElement forward to the next joint.
             eJoint = eJoint->NextSiblingElement("Joint");
         }
+
+        // Get the order (as a string) from the TiXmlElement.
+        string order = eOrder->GetText();
+
+        // Convert to stringstream.
+        stringstream ss(order);
+
+        // Create a string token.
+        string token;
+
+        // Step through the stringstream split by ',' and get the token out each time.
+        vector<int> orderVector;
+        while (getline(ss,token,','))
+        {
+            // Add token to orderVector as an int.
+            orderVector.push_back(atoi(token.c_str()));
+        }
+
+        // Step through the orderVector
+        vector<Joint> tempVector;
+        for (int i = 0; i < orderVector.size(); ++i)
+        {
+            // Add the joint from the skeletons joints to the tempVector in order.
+            tempVector.push_back(joints.at(orderVector.at(i)));
+        }
+
+        defaultArray = joints;
+        orderedArray = tempVector;
+
         worldSpaceConvertion();
         return true;
     }
-    inline void update(int index)
+
+    inline void update()
     {
-        Joint& joint = joints->at(index);
-        //std::cout << "index: " << index << std::endl;
-        //joint.worldspaceTransform.printPosition();
-        if (joint.parent == -1)
-        {
-            joint.worldspaceTransform = joint.localTransform;
-        }
-        else
-        {
-            joint.worldspaceTransform = joints->at(joint.parent).worldspaceTransform * joint.localTransform;
-        }
-        for (int i = 0; i < joint.children.size(); i++)
-        {
-            update(joint.children.at(i));
-        }
-        return;
+        // Run worldSpaceConvertion.
+        worldSpaceConvertion();
     }
 
-    vector<Joint>* joints = new vector<Joint>();
+    vector<Joint> joints;
+    vector<Joint> defaultArray;
+    vector<Joint> orderedArray;
 };
 
 
