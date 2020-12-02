@@ -21,21 +21,19 @@ public:
         // Try to load Skeleton
         if (!skeleton.loadSkeleton("Unit_Footman.constants"))
             return false;
-        // Try to load Animations.
-        if (!animation.loadAnimations("Unit_Footman.nax3"))
-            return false;
-        // Try to load and setup mesh data.
-        if (!graphics.setup())
-            return false;
+//        // Try to load Animations.
+//        if (!animation.loadAnimations("Unit_Footman.nax3"))
+//            return false;
+//        // Try to load and setup mesh data.
+//        if (!graphics.setup())
+//            return false;
         return true;
 	}
 
     void update(float runtime)
     {
         // Animate skeleton. (by runtime).
-	    animateSkeleton(runtime);
-        //graphics.jointsTransform.clear();
-        //updateMesh(0);
+	    // animateSkeleton(runtime);
     }
 	void animateSkeleton(float runtime)
     {
@@ -76,23 +74,10 @@ public:
         skeleton.update();
     }
 
-//    void updateMesh(int index)
-//    {
-//	    Joint joint = skeleton.joints->at(index);
-//
-//	    if (joint.parent == -1)
-//            graphics.jointsTransform.push_back(joint.localTransform);
-//	    else
-//	        graphics.jointsTransform.push_back(skeleton.joints->at(joint.parent).worldspaceTransform * joint.localTransform);
-//        for (int i = 0; i < joint.children.size(); ++i) {
-//            updateMesh(joint.children.at(i));
-//        }
-//    }
-
     void draw(Matrix4D viewMatrix, Vector4D camerapos)
     {
         drawSkeleton(viewMatrix);
-        drawModel(viewMatrix, camerapos);
+        //drawModel(viewMatrix, camerapos);
     }
 	void drawSkeleton(Matrix4D viewMatrix)
     {
@@ -102,7 +87,8 @@ public:
             glMatrixMode(GL_MODELVIEW);
             glLoadMatrixf((GLfloat*)&mat);
 
-            Joint joint = skeleton.joints.at(i);
+            Joint joint = skeleton.joints[i];
+            joint.worldspaceTransform.getPositionVec().print();
             Vector4D a = joint.worldspaceTransform.getPositionVector();
 
             Vector4D pos = positionMatrix.getPositionVec();

@@ -20,9 +20,9 @@ struct Joint
     string name;
     int index, parent;
     vector<int> children;
-    bool isRoot = false;
+    bool isRoot = true;
 
-    Matrix4D localTransform, worldspaceTransform, inversWorldspaceTransform;
+    Matrix4D localTransform, worldspaceTransform;
 };
 
 class Skeleton
@@ -42,7 +42,6 @@ public:
         if (!joint.isRoot)
         {
             joint.worldspaceTransform = joints.at(joint.parent).worldspaceTransform * joint.localTransform;
-            joint.inversWorldspaceTransform = Matrix4D::inverse(joint.worldspaceTransform);
         }
         else
         {
@@ -71,8 +70,8 @@ public:
         // Create two TiXmlElements for easier access.
         TiXmlElement *eJoint = doc.FirstChildElement("Nebula3")->FirstChildElement("Model")->FirstChildElement(
                 "CharacterNodes")->FirstChildElement("CharacterNode")->FirstChildElement("Joint");
-        TiXmlElement *eOrder = doc.FirstChildElement("Nebula3")->FirstChildElement("Model")->FirstChildElement(
-                "Skins")->FirstChildElement("Skin")->FirstChildElement("Fragment")->FirstChildElement("Joints");
+//        TiXmlElement *eOrder = doc.FirstChildElement("Nebula3")->FirstChildElement("Model")->FirstChildElement(
+//                "Skins")->FirstChildElement("Skin")->FirstChildElement("Fragment")->FirstChildElement("Joints");
 
         // Step through all joint elements.
         while (eJoint)
@@ -87,13 +86,10 @@ public:
             if (joint.parent != -1)
             {
                 joints.at(joint.parent).children.push_back(joint.index);
-            }
-            else
-            {
-                joint.isRoot = true;
+                joint.isRoot = false;
             }
 
-            // Get all off the attributes from the TiXmlElement and insert it in the joint.
+            // Get all off the attributes from the TiXmlElement.
             float temp[4];
             sscanf(eJoint->Attribute("position"), "%f,%f,%f,%f", &temp[0], &temp[1], &temp[2], &temp[3]);
             Vector4D position(temp);
@@ -101,13 +97,13 @@ public:
             sscanf(eJoint->Attribute("rotation"), "%f,%f,%f,%f", &temp[0], &temp[1], &temp[2], &temp[3]);
             Vector4D rotation(temp);
             Matrix4D r = Matrix4D::getRotationFromQuaternian(rotation);
-            sscanf(eJoint->Attribute("scale"), "%f,%f,%f,%f", &temp[0], &temp[1], &temp[2], &temp[3]);
+            sscanf(eJoint->Attribute("scale"),    "%f,%f,%f,%f", &temp[0], &temp[1], &temp[2], &temp[3]);
             Vector4D scale(temp);
             Matrix4D s = Matrix4D::getScaleMatrix(scale);
 
             // The worldspaceTransform is set to the position * rotation * scale. And the localTransform is set to the same.
-            joint.localTransform = p * r * s;
-            joint.worldspaceTransform = joint.localTransform;
+            joint.worldspaceTransform = p * r * s;
+            joint.localTransform = joint.worldspaceTransform;
 
             // Then add the joint to the skeletons joint vector.
             joints.push_back(joint);
@@ -115,36 +111,36 @@ public:
             // move the TiXmlElement forward to the next joint.
             eJoint = eJoint->NextSiblingElement("Joint");
         }
+//
+//        // Get the order (as a string) from the TiXmlElement.
+//        string order = eOrder->GetText();
+//
+//        // Convert to stringstream.
+//        stringstream ss(order);
+//
+//        // Create a string token.
+//        string token;
+//
+//        // Step through the stringstream split by ',' and get the token out each time.
+//        vector<int> orderVector;
+//        while (getline(ss,token,','))
+//        {
+//            // Add token to orderVector as an int.
+//            orderVector.push_back(atoi(token.c_str()));
+//        }
+//
+//        // Step through the orderVector
+//        vector<Joint> tempVector;
+//        for (int i = 0; i < orderVector.size(); ++i)
+//        {
+//            // Add the joint from the skeletons joints to the tempVector in order.
+//            tempVector.push_back(joints.at(orderVector.at(i)));
+//        }
+//
+//        //defaultArray = joints;
+//        //orderedArray = tempVector;
 
-        // Get the order (as a string) from the TiXmlElement.
-        string order = eOrder->GetText();
-
-        // Convert to stringstream.
-        stringstream ss(order);
-
-        // Create a string token.
-        string token;
-
-        // Step through the stringstream split by ',' and get the token out each time.
-        vector<int> orderVector;
-        while (getline(ss,token,','))
-        {
-            // Add token to orderVector as an int.
-            orderVector.push_back(atoi(token.c_str()));
-        }
-
-        // Step through the orderVector
-        vector<Joint> tempVector;
-        for (int i = 0; i < orderVector.size(); ++i)
-        {
-            // Add the joint from the skeletons joints to the tempVector in order.
-            tempVector.push_back(joints.at(orderVector.at(i)));
-        }
-
-        defaultArray = joints;
-        orderedArray = tempVector;
-
-        worldSpaceConvertion();
+        //worldSpaceConvertion();
         return true;
     }
 
