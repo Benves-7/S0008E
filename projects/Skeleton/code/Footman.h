@@ -21,19 +21,19 @@ public:
         // Try to load Skeleton
         if (!skeleton.loadSkeleton("Unit_Footman.constants"))
             return false;
-//        // Try to load Animations.
-//        if (!animation.loadAnimations("Unit_Footman.nax3"))
-//            return false;
-//        // Try to load and setup mesh data.
-//        if (!graphics.setup())
-//            return false;
+        // Try to load Animations.
+        if (!animation.loadAnimations("Unit_Footman.nax3"))
+            return false;
+        // Try to load and setup mesh data.
+        if (!graphics.setup())
+            return false;
         return true;
 	}
 
     void update(float runtime)
     {
         // Animate skeleton. (by runtime).
-	    // animateSkeleton(runtime);
+        animateSkeleton(runtime);
     }
 	void animateSkeleton(float runtime)
     {
@@ -52,17 +52,22 @@ public:
                     //Load animation data for one key in a clip
                     Vector4D pos = animation.getKey(clipToPlay, animationSpeed, i * 4, 0);
                     Matrix4D po = Matrix4D::getPositionMatrix(pos);
+
                     Vector4D rot = animation.getKey(clipToPlay, animationSpeed, i * 4 + 1, 1);
                     Matrix4D ro = Matrix4D::getRotationFromQuaternian(rot);
+
                     Vector4D scale = animation.getKey(clipToPlay, animationSpeed, i * 4 + 2, 0);
                     Matrix4D sc = Matrix4D::getScaleMatrix(scale);
+
                     Vector4D vel = animation.getKey(clipToPlay, animationSpeed, i * 4 + 3, 0);
                     Matrix4D res = po * ro * sc;
+
                     skeleton.joints->at(i).localTransform = res;
                 }
             }
         }
-            // If no animation is chosen, go to T-pose.
+        
+        // If no animation is chosen, go to T-pose.
         else
         {
             for (int i = 0; i < skeleton.joints->size(); ++i)
@@ -70,6 +75,7 @@ public:
                 skeleton.joints->at(i).localTransform = skeleton.defaultArray->at(i).localTransform;
             }
         }
+
         // Update the skeleton.
         skeleton.update();
     }
@@ -77,7 +83,7 @@ public:
     void draw(Matrix4D viewMatrix, Vector4D camerapos)
     {
         drawSkeleton(viewMatrix);
-        //drawModel(viewMatrix, camerapos);
+        drawModel(viewMatrix, camerapos);
     }
 	void drawSkeleton(Matrix4D viewMatrix)
     {

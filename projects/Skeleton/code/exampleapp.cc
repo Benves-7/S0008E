@@ -18,10 +18,14 @@ namespace Example
     const float l = -0.1f;
     const float t = 0.1f;
     const float b = -0.1f;
+
+    // Set input delay.
+    const int input_delay = 250;
     
 	bool ExampleApp::Open()
 	{
 		App::Open();
+		start = clock.now();
 		this->window = new Display::Window;
 
 		window->SetMousePressFunction([this](int32 button, int32 action, int32 mods)
@@ -96,41 +100,42 @@ namespace Example
                 if (key == GLFW_KEY_A) {
                     cameraPos = cameraPos - (cameraFront.crossProduct(cameraUp)).normalize() * cameraSpeed;
                 }
+
                 // Animations.
-				if (key == GLFW_KEY_0){
+				if (key == GLFW_KEY_0 && action == GLFW_PRESS){
                     start = clock.now();
                     soldier.setAnimationClip(-1);
                 }
-				if (key == GLFW_KEY_1){
+				if (key == GLFW_KEY_1 && action == GLFW_PRESS){
                     start = clock.now();
                     soldier.setAnimationClip(0);
                 }
-				if (key == GLFW_KEY_2){
+				if (key == GLFW_KEY_2 && action == GLFW_PRESS){
                     start = clock.now();
                     soldier.setAnimationClip(1);
                 }
-				if (key == GLFW_KEY_3){
+				if (key == GLFW_KEY_3 && action == GLFW_PRESS){
                     start = clock.now();
                     soldier.setAnimationClip(2);
                 }
-				if (key == GLFW_KEY_4){
+				if (key == GLFW_KEY_4 && action == GLFW_PRESS){
                     start = clock.now();
                     soldier.setAnimationClip(3);
                 }
-				if (key == GLFW_KEY_5){
+				if (key == GLFW_KEY_5 && action == GLFW_PRESS){
                     start = clock.now();
                     soldier.setAnimationClip(4);
                 }
-				if (key == GLFW_KEY_6){
+				if (key == GLFW_KEY_6 && action == GLFW_PRESS){
                     start = clock.now();
                     soldier.setAnimationClip(5);
                 }
-				if (key == GLFW_KEY_7){
+				if (key == GLFW_KEY_7 && action == GLFW_PRESS){
                     start = clock.now();
                     soldier.setAnimationClip(6);
                 }
-				if (key == GLFW_KEY_8) {
-                    start = clock.now();
+				if (key == GLFW_KEY_8 && action == GLFW_PRESS){
+				    start = clock.now();
                     soldier.setAnimationClip(7);
                 }
                 // Drawstates.
@@ -141,7 +146,6 @@ namespace Example
 				if (key == GLFW_KEY_M && action == GLFW_PRESS)
 					soldier.dm();
 				if (key == GLFW_KEY_P && action == GLFW_PRESS) {
-				    start = clock.now();
                     soldier.pa();
                 }
 			});
@@ -151,6 +155,7 @@ namespace Example
 			// Set clear color to gray.
 			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glEnable(GL_DEPTH_TEST);
+
             // Create the perspective projection matrix.
             perspectiveProjection = Matrix4D::perspective(n, f, r, l, t, b);
 
