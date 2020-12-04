@@ -47,7 +47,7 @@ public:
                 // Update the animation by the timestep between frames.
                 // Each joint is updated.
                 float animationSpeed = runtime / animation.clips[clipToPlay].keyDuration;
-                for (int i = 0; i < skeleton.joints->size(); ++i)
+                for (int i = 0; i < skeleton.joints.size(); ++i)
                 {
                     //Load animation data for one key in a clip
                     Vector4D pos = animation.getKey(clipToPlay, animationSpeed, i * 4, 0);
@@ -62,7 +62,7 @@ public:
                     Vector4D vel = animation.getKey(clipToPlay, animationSpeed, i * 4 + 3, 0);
                     Matrix4D res = po * ro * sc;
 
-                    skeleton.joints->at(i).localTransform = res;
+                    skeleton.joints.at(skeleton.getJointIndex(i))->localTransform = res;
                 }
             }
         }
@@ -70,9 +70,9 @@ public:
         // If no animation is chosen, go to T-pose.
         else
         {
-            for (int i = 0; i < skeleton.joints->size(); ++i)
+            for (int i = 0; i < skeleton.joints.size(); ++i)
             {
-                skeleton.joints->at(i).localTransform = skeleton.defaultArray->at(i).localTransform;
+                //skeleton.joints.at(i)->localTransform = skeleton.defaultArray.at(i)->localTransform;
             }
         }
 
@@ -88,23 +88,23 @@ public:
 	void drawSkeleton(Matrix4D viewMatrix)
     {
         Matrix4D mat = Matrix4D::transpose(viewMatrix);
-        for (int i = 0; i < skeleton.joints->size(); ++i)
+        for (int i = 0; i < skeleton.joints.size(); ++i)
         {
             glMatrixMode(GL_MODELVIEW);
             glLoadMatrixf((GLfloat*)&mat);
 
-            Joint joint = skeleton.joints->at(i);
-            Vector4D a = joint.worldspaceTransform.getPositionVector();
+            Joint* joint = skeleton.joints.at(skeleton.getJointIndex(i));
+            Vector4D a = joint->worldspaceTransform.getPositionVector();
 
             Vector4D pos = positionMatrix.getPositionVec();
 
             glBegin(GL_LINES);
             if (drawBones)
             {
-                if (joint.parent != -1)
+                if (!joint->isRoot)
                 {
                     glColor3f(255, 0, 0);
-                    Vector4D b = skeleton.joints->at(joint.parent).worldspaceTransform.getPositionVector();
+                    Vector4D b = skeleton.joints.at(skeleton.getJointIndex(joint->parent))->worldspaceTransform.getPositionVector();
                     glVertex3f(pos[0]+a[0], pos[1]+a[1], pos[2]+a[2]);
                     glVertex3f(pos[0]+b[0], pos[1]+b[1], pos[2]+b[2]);
                 }

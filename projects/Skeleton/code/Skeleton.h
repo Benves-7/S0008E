@@ -17,10 +17,22 @@ using namespace std;
 
 struct Joint
 {
+    Joint(int i, int p, string n)
+    {
+        index = i;
+        parent = p;
+        name = n;
+    }
+    void addMatrixes(Matrix4D pos, Matrix4D rot, Matrix4D sca)
+    {
+        //
+    }
     string name;
     int index, parent;
     vector<int> children;
     bool isRoot = true;
+
+    Matrix4D defaultTransform;
 
     Matrix4D localTransform, worldspaceTransform;
 };
@@ -31,27 +43,40 @@ public:
     Skeleton() {}
     ~Skeleton() {}
 
+    int getJointIndex(int index = 0)
+    {
+        for (int i = 0; i < joints.size(); ++i)
+        {
+            if (joints.at(i)->index == index)
+                return i;
+        }
+        return -1;
+    }
+
     inline void worldSpaceConvertion(int index = 0)
     {
         // Get a reference to the joint.
-        Joint& joint = joints->at(index);
+        int s = joints.size();
+        Joint *joint = joints.at(index);
 
         // If joint is not root
         // WorldspaceTransform is set as parents worldspaceTransform * localTransform.
         // InverseWorldspaceTransform is set as the inverse of worldspaceTransform.
-        if (!joint.isRoot)
+        if (!joint->isRoot)
         {
-            joint.worldspaceTransform = joints->at(joint.parent).worldspaceTransform * joint.localTransform;
+            joint->worldspaceTransform = joints.at(getJointIndex(joint->parent))->worldspaceTransform * joint->localTransform;
         }
         else
         {
-            joint.worldspaceTransform = joint.localTransform;
+            joint->worldspaceTransform = joint->localTransform;
         }
 
         // Step through the children and preform the worldspaceconversion.
-        for (int i = 0; i < joint.children.size(); ++i)
+        for (int i = 0; i < joint->children.size(); ++i)
         {
-            worldSpaceConvertion(joint.children.at(i));
+            int t = joint->children.at(i);
+            int index = getJointIndex(t);
+            worldSpaceConvertion(index);
         }
     }
 
@@ -59,6 +84,8 @@ public:
     {
         // Open file by filename.
         TiXmlDocument doc(filename);
+
+        joints = vector<Joint*>();
 
         // If file can't be found.
         if (!doc.LoadFile())
@@ -86,16 +113,13 @@ public:
         while (eJoint)
         {
             // Create a joint and add the name, index, and parent index.
-            Joint joint;
-            joint.name = eJoint->Attribute("name");
-            joint.index = atoi(eJoint->Attribute("index"));
-            joint.parent = atoi(eJoint->Attribute("parent"));
+            Joint* joint = new Joint(atoi(eJoint->Attribute("index")), atoi(eJoint->Attribute("parent")), eJoint->Attribute("name"));
 
             // Check if this joint is not the rootJoint. add this joint to parent's children vector.
-            if (joint.parent != -1)
+            if (joint->parent != -1)
             {
-                joints->at(joint.parent).children.push_back(joint.index);
-                joint.isRoot = false;
+                joints.at(joint->parent)->children.push_back(joint->index);
+                joint->isRoot = false;
             }
 
             // Get all off the attributes from the TiXmlElement.
@@ -113,11 +137,12 @@ public:
             Matrix4D s = Matrix4D::getScaleMatrix(scale);
 
             // The worldspaceTransform is set to the position * rotation * scale. And the localTransform is set to the same.
-            joint.worldspaceTransform = p * r * s;
-            joint.localTransform = joint.worldspaceTransform;
+            joint->worldspaceTransform = p * r * s;
+            joint->defaultTransform = p * r * s;
+            joint->localTransform = joint->worldspaceTransform;
 
             // Then add the joint to the skeletons joint vector.
-            joints->push_back(joint);
+            joints.push_back(joint);
 
             // move the TiXmlElement forward to the next joint.
             eJoint = eJoint->NextSiblingElement("Joint");
@@ -141,32 +166,28 @@ public:
         }
 
         // Step through the orderVector
-        vector<Joint> tempVector;
+        vector<Joint*> tempVector;
         for (int i = 0; i < orderVector.size(); ++i)
         {
             // Add the joint from the skeletons joints to the tempVector in order.
-            tempVector.push_back(joints->at(orderVector.at(i)));
+            tempVector.push_back(joints[orderVector[i]]);
         }
 
-        for (int i = 0; i < joints->size(); ++i)
-        {
-            defaultArray->push_back(joints->at(i));
-        }
-        orderedArray = tempVector;
+        defaultArray = joints;
+        joints = tempVector;
 
-        worldSpaceConvertion();
+        worldSpaceConvertion(getJointIndex());
         return true;
     }
 
     inline void update()
     {
         // Run worldSpaceConvertion.
-        worldSpaceConvertion();
+        worldSpaceConvertion(getJointIndex());
     }
 
-    vector<Joint>* joints = new vector<Joint>();
-    vector<Joint>* defaultArray = new vector<Joint>();
-    vector<Joint> orderedArray;
+    vector<Joint*> joints;
+    vector<Joint*> defaultArray;
 };
 
 
