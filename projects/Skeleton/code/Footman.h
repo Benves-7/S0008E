@@ -144,7 +144,7 @@ public:
     {
 	    if (drawMesh)
 	    {
-            graphics.draw(viewMatrix, positionMatrix, camerapos, playAnimation);
+            graphics.draw(viewMatrix, positionMatrix, camerapos, skeleton.joints, playAnimation);
         }
     }
 

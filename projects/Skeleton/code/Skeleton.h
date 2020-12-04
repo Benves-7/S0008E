@@ -34,7 +34,7 @@ struct Joint
 
     Matrix4D defaultTransform;
 
-    Matrix4D localTransform, worldspaceTransform;
+    Matrix4D localTransform, worldspaceTransform, inverse;
 };
 
 class Skeleton
@@ -51,6 +51,15 @@ public:
                 return i;
         }
         return -1;
+    }
+
+    void inverseConvertion()
+    {
+        for (int i = 0; i < joints.size(); ++i)
+        {
+            if (!joints.at(i)->isRoot)
+                joints.at(i)->inverse = Matrix4D::inverse(joints.at(getJointIndex(joints.at(i)->parent))->worldspaceTransform * joints.at(i)->defaultTransform);
+        }
     }
 
     inline void worldSpaceConvertion(int index = 0)
@@ -177,6 +186,7 @@ public:
         joints = tempVector;
 
         worldSpaceConvertion(getJointIndex());
+        inverseConvertion();
         return true;
     }
 

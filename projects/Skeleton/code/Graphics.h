@@ -356,7 +356,7 @@ public:
         return true;
     }
 
-    void draw(Matrix4D viewProjection, Matrix4D modelPos, Vector4D cameraPos, bool animation)
+    void draw(Matrix4D viewProjection, Matrix4D modelPos, Vector4D cameraPos, vector<Joint*> joints, bool animation)
     {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, Diff);
@@ -371,23 +371,26 @@ public:
         unsigned int transformLoc2 = glGetUniformLocation(program, "cameraPosition");
         glUniform4fv(transformLoc2, 1, cameraPos.getPointer());
 
-//        std::vector<float> transformArray;
-//        for (int i = 0; i < joints.size(); ++i)
-//        {
-//            for (int j = 0; j < 16; ++j)
-//            {
-//                transformArray.push_back(joints[i].transform.getPointer()[j]);
-//            }
-//        }
-//
-//        unsigned int transformLoc3 = glGetUniformLocation(program, "jointTransforms");
-//        glUniformMatrix4fv(transformLoc3, joints.size(), GL_TRUE, &transformArray[0]);
+        std::vector<float> transformArray;
+        for (int i = 0; i < joints.size(); ++i)
+        {
+            for (int j = 0; j < 16; ++j)
+            {
+                Matrix4D t = (joints[i]->worldspaceTransform * joints[i]->inverse);
+                float f = t.getPointer()[j];
+                transformArray.push_back(f);
+                //transformArray.push_back(joints[i]->worldspaceTransform.getPointer()[j]);
+            }
+        }
+
+        unsigned int transformLoc3 = glGetUniformLocation(program, "jointTransforms");
+        glUniformMatrix4fv(transformLoc3, joints.size(), GL_TRUE, &transformArray[0]);
 
         unsigned int transformLoc4 = glGetUniformLocation(program, "modelMatrix");
         glUniformMatrix4fv(transformLoc4, 1, GL_TRUE, modelPos.getPointer());
 
         unsigned int transformLoc5 = glGetUniformLocation(program, "isPlaying");
-        glUniform1i(transformLoc5, false);
+        glUniform1i(transformLoc5, animation);
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, vertexDataSize, GL_UNSIGNED_INT, NULL);
