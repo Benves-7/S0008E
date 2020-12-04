@@ -72,7 +72,8 @@ public:
         {
             for (int i = 0; i < skeleton.joints.size(); ++i)
             {
-                //skeleton.joints.at(i)->localTransform = skeleton.defaultArray.at(i)->localTransform;
+                Joint* joint = skeleton.joints.at(skeleton.getJointIndex(i));
+                joint->localTransform = joint->defaultTransform;
             }
         }
 
