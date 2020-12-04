@@ -24,21 +24,15 @@ uniform bool isPlaying;
 void main()
 {
     vec4 totalNormal;
-    if(isPlaying)
-    {
-        vec4 normWeights = aSkinWeights / dot(aSkinWeights, vec4(1.0));
-        mat4x4 joint =  jointTransforms[int(aSkinJindices[0])] * normWeights[0] +
-                        jointTransforms[int(aSkinJindices[1])] * normWeights[1] +
-                        jointTransforms[int(aSkinJindices[2])] * normWeights[2] +
-                        jointTransforms[int(aSkinJindices[3])] * normWeights[3];
-        gl_Position = transform * modelMatrix * (joint * vec4(pos, 1.0));
-        totalNormal = inverse(transpose(joint)) * aNormal;
-    }
-    else
-    {
-        gl_Position = transform * modelMatrix * vec4(pos, 1.0);
-        totalNormal = aNormal;
-    }
+
+    vec4 normWeights = aSkinWeights / dot(aSkinWeights, vec4(1.0));
+    mat4x4 joint =  jointTransforms[int(aSkinJindices[0])] * normWeights[0] +
+                    jointTransforms[int(aSkinJindices[1])] * normWeights[1] +
+                    jointTransforms[int(aSkinJindices[2])] * normWeights[2] +
+                    jointTransforms[int(aSkinJindices[3])] * normWeights[3];
+    gl_Position = transform * modelMatrix * (joint * vec4(pos, 1.0));
+    totalNormal = inverse(transpose(joint)) * aNormal;
+
 
     mat3 rotMat = mat3(inverse(transpose(modelMatrix)));
 

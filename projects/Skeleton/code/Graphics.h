@@ -372,18 +372,15 @@ public:
         glUniform4fv(transformLoc2, 1, cameraPos.getPointer());
 
         std::vector<float> transformArray;
+
         for (int i = 0; i < joints.size(); ++i)
         {
             for (int j = 0; j < 16; ++j)
             {
-                Matrix4D t = (joints[i]->worldspaceTransform * joints[i]->inverse);
-                float f = t.getPointer()[j];
-                transformArray.push_back(f);
-                //transformArray.push_back(joints[i]->worldspaceTransform.getPointer()[j]);
+                transformArray.push_back((joints[i]->worldspaceTransform * joints[i]->inverse).getPointer()[j]);
             }
         }
-
-        unsigned int transformLoc3 = glGetUniformLocation(program, "jointTransforms");
+              unsigned int transformLoc3 = glGetUniformLocation(program, "jointTransforms");
         glUniformMatrix4fv(transformLoc3, joints.size(), GL_TRUE, &transformArray[0]);
 
         unsigned int transformLoc4 = glGetUniformLocation(program, "modelMatrix");

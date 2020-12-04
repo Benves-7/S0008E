@@ -83,9 +83,7 @@ public:
         // Step through the children and preform the worldspaceconversion.
         for (int i = 0; i < joint->children.size(); ++i)
         {
-            int t = joint->children.at(i);
-            int index = getJointIndex(t);
-            worldSpaceConvertion(index);
+            worldSpaceConvertion(getJointIndex(joint->children.at(i)));
         }
     }
 
